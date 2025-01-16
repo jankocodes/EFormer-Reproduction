@@ -1,0 +1,8 @@
+#ignore pdfs
+*.pdf
+
+#ignore cache
+__pycache__
+
+#ignore data
+data
