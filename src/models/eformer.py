@@ -12,8 +12,9 @@ class EFormer(nn.Module):
         self.proj_lr = nn.Conv2d(1024, 256, kernel_size=1)
     
     def forward(self, x):
+        #resnet50 backbone
         f_hr, f_lr= self.backbone(x) #(B,512,H/8,W/8), (B,1024,H/16,W/16)
-           
+        
         f_hr = self.proj_hr(f_hr) #(B,256,H/8,W/8)
         f_lr = self.proj_lr(f_lr) #(B,256,H/16,W/16)
         
