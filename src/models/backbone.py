@@ -1,11 +1,11 @@
 import torch.nn as nn
 import torch
-import torchvision
+from torchvision.models import resnet50, ResNet50_Weights
 
 class Backbone(nn.Module):
     def __init__(self):
         super().__init__()
-        resnet= torchvision.models.resnet50(pretrained= True)
+        resnet= resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
         
         self.layer1= resnet.layer1
         
@@ -24,15 +24,3 @@ class Backbone(nn.Module):
         return f_hr, f_lr
     
     
-if __name__ == "__main__":
-    # Example input: Batch of 2 images, each 3x224x224
-    dummy_input = torch.randn(2, 3, 224, 224)
-    
-    # Initialize backbone
-    backbone = Backbone()
-    
-    # Forward pass
-    f_hr, f_lr = backbone(dummy_input)
-    
-    print(f"High-resolution feature map shape: {f_hr.flatten(2).permute(2, 0, 1).shape}")  # Expected: [2, 1024, H/8, W/8]
-    print(f"Low-resolution feature map shape: {f_lr.reshape([-1, 2, 256]).shape}")   # Expected: [2, 2048, H/16, W/16]
