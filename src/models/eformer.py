@@ -7,12 +7,13 @@ class EFormer(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
+        #backbone
         self.backbone= Backbone()
         
         self.proj_hr = nn.Conv2d(512, 256, kernel_size=1)
         self.proj_lr = nn.Conv2d(1024, 256, kernel_size=1)
         
-        # 4 transformer blocks
+        # transformer
         self.transformer_blocks = nn.Sequential(
             TransformerBlock(),
             TransformerBlock(),
@@ -20,12 +21,15 @@ class EFormer(nn.Module):
             TransformerBlock()
         )
         
+        #prediction stage
         self.conv_semantic = nn.Conv2d(256, 256, kernel_size=3,padding=1)
         self.conv_contour = nn.Conv2d(256, 256, kernel_size=3,padding=1)
 
         self.conv_fuse = nn.Conv2d(256, 256, kernel_size=3,padding=1)
         
         self.head= nn.Conv2d(256, 1, kernel_size=3, padding=1 )
+        
+        self.sigmoid= nn.Sigmoid()
         
     
     def forward(self, x):
@@ -68,9 +72,10 @@ class EFormer(nn.Module):
         
         #upsample to original size
         matte= nn.functional.interpolate(matte, (H,W))
-
         
-        print(matte.min())
+        matte= self.sigmoid(matte)
+        print(matte)
+
         return matte
             
             
