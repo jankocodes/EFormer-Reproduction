@@ -1,6 +1,6 @@
 import torch.nn  as nn
-from backbone import Backbone
-from transformer import TransformerBlock
+from models.backbone import Backbone
+from models.transformer import TransformerBlock
 import torch
 
 class EFormer(nn.Module):
@@ -74,7 +74,6 @@ class EFormer(nn.Module):
         matte= nn.functional.interpolate(matte, (H,W))
         
         matte= self.sigmoid(matte)
-        print(matte)
 
         return matte
             
@@ -85,9 +84,3 @@ class EFormer(nn.Module):
         
         
 
-if __name__ == "__main__":
-    dummy_input = torch.randn(1, 3, 224, 224) 
-    model = EFormer()
-    model(dummy_input)
-    
-    

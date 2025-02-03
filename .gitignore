@@ -6,3 +6,12 @@ __pycache__
 
 #ignore data
 data
+
+#apple metadata
+.DS_Store
+
+#ignore docs
+docs
+
+#ignore test
+test.py

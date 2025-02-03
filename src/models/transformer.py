@@ -1,5 +1,5 @@
 import torch.nn as nn
-from branches import SCD, CEEB, SEB
+from models.branches import SCD, CEEB, SEB
 import torch
 
 class TransformerBlock(nn.Module):
