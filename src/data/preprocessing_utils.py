@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from os import path
+from random import sample
 import shutil
 
 def unpack_bg20k(bg20k: str):  
@@ -110,3 +111,31 @@ def unpack_videomatte240k(videomatte240k):
     unpack_split(videomatte_train)
     unpack_split(videomatte_test)
     
+def sample_bg10k(src, dest):
+    
+    """
+    Sample 10000 images from src and move them to dest.
+    
+    The images are split into a train and test set, with 9000 images in the train set and 1000 images in the test set.
+    
+    Parameters
+    ----------
+    src : str
+        The source directory containing all the images.
+    dest : str
+        The destination directory where the sampled images will be moved.
+    """
+    all_images = [f for f in os.listdir(src) if f.endswith('.jpg')]
+    
+    sampled_images= sample(all_images, 10000)
+    train_images= sample(sampled_images, 9000)
+    test_images= [img for img in sampled_images if  img not in train_images]
+    
+    
+    for img in train_images:
+        shutil.copy(os.path.join(src, img), os.path.join(dest, 'train', img))
+    for img in test_images:
+        shutil.copy(os.path.join(src, img), os.path.join(dest, 'test', img))
+
+        
+    print(f'Sampled 10000 images from {src}')
