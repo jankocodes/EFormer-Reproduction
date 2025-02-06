@@ -1,9 +1,10 @@
-from pathlib import Path
 import os
 from os import path
-from random import sample
+from random import sample, shuffle
 import shutil
 from sklearn.model_selection import train_test_split
+from PIL import Image
+import numpy as np
 
 def unpack_bg20k(bg20k: str):  
     """
@@ -142,6 +143,17 @@ def sample_bg10k(src, dest):
     print(f'Sampled 10000 images from {src}')
     
 def split_train_set(videomatte240k):
+    """
+    Split the training set of the Videomatte240k dataset into a train and val set.
+    
+    The val set will contain 3007 images, and the train set will contain 234982 images.
+    
+    Parameters
+    ----------
+    videomatte240k : str
+        The path to the Videomatte240k dataset.
+    """
+    
     #train input
     train_fgr_folder= os.path.join(videomatte240k, 'train', 'fgr')
     train_pha_folder= os.path.join(videomatte240k, 'train', 'pha')
@@ -164,3 +176,56 @@ def split_train_set(videomatte240k):
     
     print(f'Sampled 3007 images into {val_fgr_folder}')
     print(f'Sampled 3007 images into {val_pha_folder}')
+    
+def blend_foreground_with_background(split_src, background_folder, split_dest):
+    
+    """
+    Blend foreground images with background images.
+    
+    The function will blend each foreground image with a randomly selected background image,
+    and save the blended images to the split_dest folder.
+    
+    Parameters
+    ----------
+    split_src : str
+        The path to the folder containing the foreground images and alpha mattes.
+    background_folder : str
+        The path to the folder containing the background images.
+    split_dest : str
+        The path to the folder where the blended images will be saved.
+    """
+    
+    backgrounds= [f for f in os.listdir(background_folder) if f.endswith('.jpg')]
+    
+    shuffle(backgrounds)
+    
+    fgr_folder= os.path.join(split_src, 'fgr')
+    pha_folder= os.path.join(split_src, 'pha')
+    
+    foregrounds= [f for f in os.listdir(fgr_folder) if f.endswith('.jpg')]
+    alpha_mattes= [f for f in os.listdir(pha_folder) if f.endswith('.jpg')]
+     
+    for i, (fgr_path, pha_path) in enumerate(zip(foregrounds, alpha_mattes)):
+        bg_path = backgrounds[i%len(backgrounds)]
+        
+        bg = Image.open(os.path.join(background_folder, bg_path)).convert("RGB")
+        fgr= Image.open(os.path.join(fgr_folder, fgr_path)).convert('RGB')
+        pha= Image.open(os.path.join(pha_folder, pha_path)).convert('L')
+        
+        #resize bg to fgr_size in order to avoid pha mismatch after composition
+        bg= bg.resize(fgr.size, Image.BILINEAR)
+
+        # Convert to NumPy arrays
+        fgr_np = np.array(fgr)
+        pha_np = np.array(pha) / 255.0  # Normalize alpha to [0,1]
+        bg_np = np.array(bg)
+
+        # Alpha blending: Composite = Foreground * Alpha + Background * (1 - Alpha)
+        composite_np = (fgr_np[..., :3] * pha_np[..., None] + bg_np * (1 - pha_np[..., None])).astype(np.uint8)
+        composite = Image.fromarray(composite_np)
+        composite_path= os.path.join(split_dest,'composites', fgr_path)
+        
+        composite.save(composite_path)
+        shutil.copy(os.path.join(pha_folder, pha_path), os.path.join(split_dest, 'pha', pha_path))
+        
+    print(f'Composed {len(foregrounds)} images and moved them to {split_dest}.')
