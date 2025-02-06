@@ -3,6 +3,7 @@ import os
 from os import path
 from random import sample
 import shutil
+from sklearn.model_selection import train_test_split
 
 def unpack_bg20k(bg20k: str):  
     """
@@ -139,3 +140,27 @@ def sample_bg10k(src, dest):
 
         
     print(f'Sampled 10000 images from {src}')
+    
+def split_train_set(videomatte240k):
+    #train input
+    train_fgr_folder= os.path.join(videomatte240k, 'train', 'fgr')
+    train_pha_folder= os.path.join(videomatte240k, 'train', 'pha')
+    
+    train_fgr_set= os.listdir(train_fgr_folder)
+    train_pha_set= os.listdir(train_pha_folder)
+    
+    #sample 3007 val images (fgr and pha names are equal)
+    _,val_set= train_test_split(train_fgr_set, test_size=3007/237989, random_state= 42)
+    
+    #val output
+    val_fgr_folder= os.path.join(videomatte240k, 'val', 'fgr')
+    val_pha_folder= os.path.join(videomatte240k,'val', 'pha')
+
+    
+    #move fgr and pha
+    for name in val_set:
+        shutil.move(os.path.join(train_fgr_folder,name), os.path.join(val_fgr_folder, name))
+        shutil.move(os.path.join(train_pha_folder, name),  os.path.join(val_pha_folder, name))
+    
+    print(f'Sampled 3007 images into {val_fgr_folder}')
+    print(f'Sampled 3007 images into {val_pha_folder}')

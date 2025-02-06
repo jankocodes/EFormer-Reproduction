@@ -1,5 +1,5 @@
 from pathlib import Path
-from preprocessing_utils import unpack_bg20k, unpack_videomatte240k, sample_bg10k
+from preprocessing_utils import unpack_bg20k, unpack_videomatte240k, sample_bg10k, split_train_set
 import os 
 
 if __name__=='__main__':
@@ -11,16 +11,25 @@ if __name__=='__main__':
     videomatte240k_path= os.path.join(raw_path, 'VideoMatte240K_JPEG_SD')
     
     #unpack datasets
-    unpack_bg20k(bg20k_path)
-    unpack_videomatte240k(videomatte240k_path) 
+    #unpack_bg20k(bg20k_path)
+    #unpack_videomatte240k(videomatte240k_path) 
     
     #create bg10k folder    
     bg10k_path= os.path.join(raw_path, 'bg10k')
     
-    os.mkdir(bg10k_path)
-    os.mkdir(os.path.join(bg10k_path, 'train'))
-    os.mkdir(os.path.join(bg10k_path, 'test'))
+    os.makedirs(bg10k_path, exist_ok=True)
+    os.makedirs(os.path.join(bg10k_path, 'train'), exist_ok=True)
+    os.makedirs(os.path.join(bg10k_path, 'test'), exist_ok=True)
     
     #sample 10k images from bg20k
-    sample_bg10k(bg20k_path, bg10k_path)
+    #sample_bg10k(bg20k_path, bg10k_path)
+    
+    #split train_set to train/val, (train/test already split)
+    videomatte240k_val_path= os.path.join(videomatte240k_path, 'val')
+    
+    os.makedirs(videomatte240k_val_path, exist_ok=True)
+    os.makedirs(os.path.join(videomatte240k_val_path, 'fgr'), exist_ok=True)
+    os.makedirs(os.path.join(videomatte240k_val_path, 'pha'), exist_ok=True)
+    
+    split_train_set(videomatte240k_path)
     
