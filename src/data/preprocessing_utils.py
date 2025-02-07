@@ -206,6 +206,9 @@ def blend_foreground_with_background(split_src, background_folder, split_dest):
     alpha_mattes= [f for f in os.listdir(pha_folder) if f.endswith('.jpg')]
      
     for i, (fgr_path, pha_path) in enumerate(zip(foregrounds, alpha_mattes)):
+        composite_path= os.path.join(split_dest,'composites', fgr_path)
+        
+
         bg_path = backgrounds[i%len(backgrounds)]
         
         bg = Image.open(os.path.join(background_folder, bg_path)).convert("RGB")
@@ -223,9 +226,9 @@ def blend_foreground_with_background(split_src, background_folder, split_dest):
         # Alpha blending: Composite = Foreground * Alpha + Background * (1 - Alpha)
         composite_np = (fgr_np[..., :3] * pha_np[..., None] + bg_np * (1 - pha_np[..., None])).astype(np.uint8)
         composite = Image.fromarray(composite_np)
-        composite_path= os.path.join(split_dest,'composites', fgr_path)
         
         composite.save(composite_path)
         shutil.copy(os.path.join(pha_folder, pha_path), os.path.join(split_dest, 'pha', pha_path))
+        
         
     print(f'Composed {len(foregrounds)} images and moved them to {split_dest}.')
