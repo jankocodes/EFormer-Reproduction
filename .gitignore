@@ -16,3 +16,6 @@ docs
 
 #ignore test
 test.py
+
+#ignore notebooks
+src/*.ipynb
