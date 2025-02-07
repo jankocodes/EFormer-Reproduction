@@ -29,7 +29,7 @@ class EFormerDataset(Dataset):
         composite_path= os.path.join(self.com_dir, name)
         pha_path = os.path.join(self.pha_dir, name)
 
-        composite = Image.open(composite).convert("RGB")
+        composite = Image.open(composite_path).convert("RGB")
         pha = Image.open(pha_path).convert("L")  # Alpha is grayscale
         
         
