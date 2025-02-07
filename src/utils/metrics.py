@@ -70,10 +70,12 @@ def gradient_loss(pred: torch.Tensor, target: torch.Tensor):
         
         return grad_magnitude
     
+    batch_size= pred.shape[0]
+    
     grad_pred = compute_gradient(pred)
     grad_target = compute_gradient(target)
 
-    return torch.mean(torch.abs(grad_pred - grad_target))
+    return torch.sum(torch.abs(grad_pred - grad_target))/batch_size
 
 
 #Conn
@@ -106,7 +108,7 @@ def connectivity_loss(pred: torch.Tensor, target: torch.Tensor, step= 0.1):
                 target_mask = (target_pha >= threshold).float()
                 
                 #compute connectivity difference
-                loss+= torch.sum(torch.abs(pred_mask, target_mask)) / pred.numel()
+                loss+= torch.sum(torch.abs(pred_mask- target_mask)) 
         
         return loss/batch_size
                 
