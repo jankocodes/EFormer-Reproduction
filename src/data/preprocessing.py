@@ -5,10 +5,11 @@ import os
 if __name__=='__main__':
     root= Path(__file__).parent.parent.parent
     
-    #assuming Videomatte240k and BG20K are installed in root/datasets/raw:
+    #assuming Videomatte240k, AIM and BG20K are installed in root/datasets/raw:
     raw_path= os.path.join(root, 'datasets', 'raw')
     bg20k_path= os.path.join(raw_path, 'bg20k')
     videomatte240k_path= os.path.join(raw_path, 'VideoMatte240K_JPEG_SD')
+    aim_path= os.path.join(raw_path, 'AIM') 
     
     #unpack datasets
     unpack_bg20k(bg20k_path)
@@ -31,7 +32,7 @@ if __name__=='__main__':
     os.makedirs(os.path.join(videomatte240k_val_path, 'fgr'), exist_ok=True)
     os.makedirs(os.path.join(videomatte240k_val_path, 'pha'), exist_ok=True)
     
-    #split_train_set(videomatte240k_path)
+    split_train_set(videomatte240k_path)
     
     #composition stage
     composite_dataset_path= os.path.join(root,'datasets', 'composite_dataset')
@@ -39,15 +40,20 @@ if __name__=='__main__':
     
     os.makedirs(composite_dataset_path, exist_ok=True)
 
-    #create composite-split and subfolders
+    #create composite-split and subfolders for VideoMatte240K
     for split in splits:
         composite_split_path= os.path.join(composite_dataset_path, split)
         os.makedirs(composite_split_path, exist_ok=True)
         os.makedirs(os.path.join(split, 'fgr'), exist_ok=True)
         os.makedirs(os.path.join(split, 'pha'), exist_ok=True)
 
-        #compose
+        #compose 
         blend_foreground_with_background(os.path.join(videomatte240k_path, split),
                                         os.path.join(bg10k_path, split),
-                                        os.path.join(composite_split_path))
+                                        composite_split_path)
     
+    #compose AIM images
+    blend_foreground_with_background(aim_path,
+                                  os.path.join(bg10k_path, 'train'),
+                                  os.path.join(composite_dataset_path, 'train')
+                                  )
