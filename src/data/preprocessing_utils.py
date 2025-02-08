@@ -207,7 +207,6 @@ def blend_foreground_with_background(split_src, background_folder, split_dest):
      
     for i, (fgr_path, pha_path) in enumerate(zip(foregrounds, alpha_mattes)):
         composite_path= os.path.join(split_dest,'composites', fgr_path)
-        
 
         bg_path = backgrounds[i%len(backgrounds)]
         
