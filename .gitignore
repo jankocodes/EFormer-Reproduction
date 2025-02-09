@@ -19,3 +19,6 @@ test.py
 
 #ignore notebooks
 src/*.ipynb
+
+#ignore logs and checkpoints
+experiments
