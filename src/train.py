@@ -1,4 +1,4 @@
-import torch
+import torch 
 import torchvision.transforms as transforms
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -7,14 +7,15 @@ from models.eformer import EFormer
 from pathlib import Path
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.tensorboard import SummaryWriter
+from utils.metrics import *
+from utils.training import train
+import json
 
+data_root= "$TMPDIR/composite_dataset"
 
+json_log = {}
 
-root_dir= Path(__file__).parent.parent
-
-writer = SummaryWriter(root_dir/'experiments/logs') 
-
-device = "mps" if torch.mps.is_available() else "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 transform = transforms.Compose([
     transforms.Resize((224,224)),  
@@ -22,11 +23,11 @@ transform = transforms.Compose([
 ])
 
 # Load dataset with augmentation
-train_dataset = EFormerDataset(root_dir=root_dir/'datasets/composite_dataset/train',
+train_dataset = EFormerDataset(root_dir=data_root+'/train',
                                transform=transform,
                                p_flip=0.5)
 
-val_dataset= EFormerDataset(root_dir=root_dir/'datasets/composite_dataset/val',
+val_dataset= EFormerDataset(root_dir=data_root+'/val',
                             transform=transform,
                             p_flip=0)
 
@@ -48,53 +49,36 @@ num_epochs = 25
 best_val_loss= float('inf')
 
 for epoch in range(num_epochs):
-    model.train()
-    train_loss = 0.0
-
-    print('Train')
-    for images, labels in train_loader:
-        images, labels = images.to(device), labels.to(device)
-
-        optimizer.zero_grad()
-        outputs = model(images)
-        loss = criterion(outputs, labels)  
-        loss.backward()
-        optimizer.step()
-
-        train_loss += loss.item()
-        break
     
-    writer.add_scalar("Loss/train", train_loss , epoch)
-    writer.add_scalar("Learning Rate", scheduler.get_last_lr()[0], epoch)
+    results= train(model=model,
+             train_loader=train_loader,
+             val_loader=val_loader,
+             criterion=criterion,
+             optimizer=optimizer,
+             device=device)    
     
-    print('Val')
-    with torch.no_grad():
-        val_loss= 0
-        for images, labels in val_loader:
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
-
-            val_loss += criterion(outputs, labels).item()
-            break
+    #log metrics
+    json_log[epoch] = results
     
-    writer.add_scalar("Loss/val", val_loss , epoch)
+    print(f"Epoch [{epoch+1}/{num_epochs}] | Train Loss: {results['train_loss']:.4f} | "
+    f"Val Loss: {results['val_loss']:.4f} | MAD: {results['mad']:.3f} | "
+    f"MSE: {results['mse']:.3f} | Grad: {results['grad']:.3f} | Conn: {results['conn']:.3f}")
     
-    #safe best model
+    #save best model
+    val_loss= results["val_loss"]
     if val_loss < best_val_loss:
         best_val_loss = val_loss
-        torch.save(model.state_dict(), root_dir/"experiments/checkpoints/best_model.pth")
+        torch.save(model.state_dict(), "experiments/checkpoints/best_model.pth")
         print(f"New best model saved (Epoch {epoch+1})")
 
-    # Save every 5 epochs
+    #save every 5 epochs
     if (epoch + 1) % 5 == 0:
-        torch.save(model.state_dict(), root_dir/f"experiments/checkpoints/eformer_epoch{epoch+1}.pth")
-        break
+        torch.save(model.state_dict(), f"experiments/checkpoints/eformer_epoch{epoch+1}.pth")
     
     scheduler.step()  # Apply learning rate decay
     
 
-    print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {train_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}")
-    
-writer.close()
+#save results    
+with open("experiments/logs/metrics_log.json", "w") as f:
+    json.dump(json_log, f, indent=4)
 
-print("Training complete!")

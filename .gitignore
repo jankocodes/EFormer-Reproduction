@@ -16,9 +16,12 @@ docs
 
 #ignore test
 test.py
+train_test.py
 
 #ignore notebooks
 src/*.ipynb
 
-#ignore logs and checkpoints
-experiments
+#ignore test experiments
+experiments/checkpoints/*
+experiments/logs/*
+
