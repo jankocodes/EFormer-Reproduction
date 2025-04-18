@@ -22,10 +22,14 @@ json_log = {}
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+print("Device: {device}")
+
 transform = transforms.Compose([
     transforms.Resize((224,224)),  
     transforms.ToTensor(),  
 ])
+
+print("Loading data...")
 
 # Load dataset with augmentation
 train_dataset = EFormerDataset(root_dir=data_root+'/train',
@@ -52,6 +56,8 @@ scheduler = StepLR(optimizer, step_size=5, gamma=0.8)
 num_epochs = 25
 
 best_val_loss= float('inf')
+
+print("Start training: ")
 
 for epoch in range(num_epochs):
     
@@ -82,6 +88,7 @@ for epoch in range(num_epochs):
     
     scheduler.step()  # Apply learning rate decay
     
+print("Training finished.")
 
 #save results    
 with open("experiments/logs/metrics_log.json", "w") as f:
