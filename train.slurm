@@ -1,31 +1,50 @@
 #!/bin/bash -l
 #
 #SBATCH --job-name=eformer_train        # Job name shown in squeue
-#SBATCH --output=$WORK/EFormer-Reproduction/experiments/logs/%j.out
-#SBATCH --error=$WORK/EFormer-Reproduction/experiments/logs/%j.err
+#SBATCH --output=/home/woody/mrrr/mrrr107v/EFormer-Reproduction/experiments/logs/%j.out
+#SBATCH --error=/home/woody/mrrr/mrrr107v/EFormer-Reproduction/experiments/logs/%j.err
 #SBATCH --partition=rtx3080
 #SBATCH --gres=gpu:rtx3080:1
 #SBATCH --time=24:00:00                 # Maximum runtime
 #SBATCH --export=NONE                   # Do not inherit environment from submitting shell
 
-unset SLURM_EXPORT_ENV                  # Required for srun to work correctly
+unset SLURM_EXPORT_ENV
 
-# Load necessary modules
-module load python/3.10-anaconda
-module load cuda/11.8.0
+echo "[$(date)] Job started on node: $(hostname)"
+echo "[$(date)] SLURM job ID: $SLURM_JOB_ID"
+echo "[$(date)] Checking environment setup..."
 
-# Activate Conda environment
-source $(conda info --base)/etc/profile.d/conda.sh
-conda activate eformer_env
+# Load modules
+echo "Loading Python and CUDA modules..."
+module load python/3.10-anaconda || { echo "Failed to load python module"; exit 1; }
+module load cuda/11.8.0 || { echo "Failed to load cuda module"; exit 1; }
 
-# Stage dataset to fast temporary storage and unpack 
-echo "Copying dataset to FASTTMP..."
-cd $TMPDIR
-tar xf $WORK/dataset.tar 
+# Check conda
+echo "Activating Conda environment..."
+source $(conda info --base)/etc/profile.d/conda.sh || { echo "Failed to source conda.sh"; exit 1; }
+conda activate eformer_env || { echo "Failed to activate conda env"; exit 1; }
 
-# Change to project directory
-cd $WORK/EFormer-Reproduction
+# Stage data
+echo "[$(date)] Copying dataset to TMPDIR: $TMPDIR"
+cd $TMPDIR || { echo "Failed to cd into TMPDIR"; exit 1; }
+tar xf /home/woody/mrrr/mrrr107v/dataset.tar || { echo "Failed to unpack dataset.tar"; exit 1; }
+
+# Check dataset
+echo "Verifying extracted dataset..."
+ls -l $TMPDIR
+ls -l $TMPDIR/datasets/composite_dataset/train
+
+# Project directory
+echo "[$(date)] Changing to project dir: /home/woody/mrrr/mrrr107v/EFormer-Reproduction"
+cd /home/woody/mrrr/mrrr107v/EFormer-Reproduction || { echo "Failed to cd into project directory"; exit 1; }
+
+# Test script run
+echo "[$(date)] Running a dry Python command to test setup..."
+srun python -c "print('Python environment is working')" || { echo "Python test failed"; exit 1; }
+
+echo "[$(date)] All checks passed. Ready to run training script."
+
 
 # Run training script with staged data
-srun python src/train.py
+srun python src/train.py --data_root=$TMPDIR/datasets/composite_dataset
 

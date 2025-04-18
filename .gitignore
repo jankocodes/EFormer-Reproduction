@@ -24,4 +24,7 @@ src/*.ipynb
 #ignore test experiments
 experiments/checkpoints/*
 experiments/logs/*
+debug_logs
 
+#ignore slurm
+*.slurm

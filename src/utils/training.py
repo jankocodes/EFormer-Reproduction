@@ -19,7 +19,6 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
         optimizer.step()
 
         train_loss += loss.item()
-        break
 
     
     with torch.no_grad():
@@ -39,7 +38,6 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
             total_mse += mean_squared_error(outputs, labels).item()
             total_grad += gradient_loss(outputs, labels).item()
             total_conn += connectivity_loss(outputs, labels).item()
-            break
 
 
         N = len(val_loader)
@@ -56,6 +54,7 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
     results["mse"] = avg_mse
     results["grad"] = avg_grad
     results["conn"] = avg_conn
+    
 
     return results
         
