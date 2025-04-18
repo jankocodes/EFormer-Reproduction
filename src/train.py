@@ -1,16 +1,37 @@
-import torch 
-import torchvision.transforms as transforms
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from data.dataset import EFormerDataset
-from models.eformer import EFormer
-from pathlib import Path
-from torch.optim.lr_scheduler import StepLR
-from torch.utils.tensorboard import SummaryWriter
-from utils.metrics import *
-from utils.training import train
 import json
+print("json imported")
+
 import argparse
+print("argparse imported")
+
+import torch 
+print("torch imported")
+
+import torchvision.transforms as transforms
+print("torchvision.transforms imported")
+
+import torch.optim as optim
+print("torch.optim imported")
+
+from torch.utils.data import DataLoader
+print("torch.utils.data imported")
+
+from data.dataset import EFormerDataset
+print("EFormerDataset imported from data.dataset")
+
+from models.eformer import EFormer
+print("EFormer imported from models.eformer")
+
+from torch.optim.lr_scheduler import StepLR
+print("StepLR imported")
+
+from utils.metrics import *
+print("utils.metrics imported")
+
+from utils.training import train
+print("train imported from utils.training")
+
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_root', type=str, required=True, help='Path to composite dataset')
