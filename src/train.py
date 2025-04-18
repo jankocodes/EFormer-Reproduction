@@ -10,8 +10,13 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.metrics import *
 from utils.training import train
 import json
+import argparse
 
-data_root= "$TMPDIR/composite_dataset"
+parser = argparse.ArgumentParser()
+parser.add_argument('--data_root', type=str, required=True, help='Path to composite dataset')
+args = parser.parse_args()
+
+data_root = args.data_root
 
 json_log = {}
 
