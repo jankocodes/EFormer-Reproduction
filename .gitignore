@@ -28,3 +28,7 @@ debug_logs
 
 #ignore slurm
 *.slurm
+
+#ignore logs
+*.out
+*.err
