@@ -35,7 +35,11 @@ print("train imported from utils.training", flush=True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_root', type=str, required=True, help='Path to composite dataset')
+parser.add_argument('--run_name', type=str, required=True, help='Name of the current training run')
 args = parser.parse_args()
+
+data_root = args.data_root
+run_name = args.run_name
 
 data_root = args.data_root
 
@@ -100,15 +104,15 @@ for epoch in range(num_epochs):
     val_loss= results["val_loss"]
     if val_loss < best_val_loss:
         best_val_loss = val_loss
-        torch.save(model.state_dict(), "experiments/checkpoints/best_model.pth")
+        torch.save(model.state_dict(), f"experiments/checkpoints/{run_name}/best_model.pth")
         print(f"New best model saved (Epoch {epoch+1})", flush=True)
 
     #save every 5 epochs
     if (epoch + 1) % 5 == 0:
-        torch.save(model.state_dict(), f"experiments/checkpoints/eformer_epoch{epoch+1}.pth")
+        torch.save(model.state_dict(), f"experiments/checkpoints/{run_name}/eformer_epoch{epoch+1}.pth")
     
     #save results    
-    with open("experiments/logs/metrics_log.json", "w") as f:
+    with open(f"experiments/logs/{run_name}/metrics_log.json", "w") as f:
         json.dump(json_log, f, indent=4)
         
     scheduler.step()  # Apply learning rate decay
