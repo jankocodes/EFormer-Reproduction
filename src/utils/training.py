@@ -17,7 +17,7 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
         loss.backward()
         optimizer.step()
 
-        train_loss += loss.item
+        train_loss += loss.item()
 
     
     with torch.no_grad():
@@ -28,25 +28,29 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
         total_conn = 0.0
 
         model.eval()
+        n_images= 0
         for images, labels in val_loader:
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             
-            #adapt metrics to per image metrics
             val_loss += criterion(outputs, labels).item()
-            total_mad += mean_absolute_deviation(outputs, labels).item()
-            total_mse += mean_squared_error(outputs, labels).item()
-            total_grad += gradient_loss(outputs, labels).item()
-            total_conn += connectivity_loss(outputs, labels).item()
+            
+            # Compute image-wise metrics
+            for i in range(images.size(0)):
+                total_mad += mean_absolute_deviation(outputs[i:i+1], labels[i:i+1]).item()
+                total_mse += mean_squared_error(outputs[i:i+1], labels[i:i+1]).item()
+                total_grad += gradient_loss(outputs[i:i+1], labels[i:i+1]).item()
+                total_conn += connectivity_loss(outputs[i:i+1], labels[i:i+1]).item()
+                n_images+=1
+                
 
 
-        N = len(val_loader)
-        avg_train_loss = train_loss / len(train_loader)
-        avg_val_loss = val_loss / N
-        avg_mad = total_mad / N
-        avg_mse = total_mse / N
-        avg_grad = total_grad / N
-        avg_conn = total_conn / N
+        avg_val_loss = val_loss / len(val_loader)
+        avg_train_loss= train_loss/ len(train_loader)
+        avg_mad = total_mad / n_images
+        avg_mse = total_mse / n_images
+        avg_grad = total_grad / n_images
+        avg_conn = total_conn / n_images
 
     results = {}
     results["train_loss"] = avg_train_loss

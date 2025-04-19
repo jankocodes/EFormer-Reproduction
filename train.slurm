@@ -3,8 +3,8 @@
 #SBATCH --job-name=eformer_train        # Job name shown in squeue
 #SBATCH --output=/home/woody/mrrr/mrrr107v/EFormer-Reproduction/experiments/logs/%j.out
 #SBATCH --error=/home/woody/mrrr/mrrr107v/EFormer-Reproduction/experiments/logs/%j.err
-#SBATCH --partition=rtx3080
-#SBATCH --gres=gpu:rtx3080:1
+#SBATCH --gres=gpu:a100:1
+#SBATCH --partition=a100
 #SBATCH --time=24:00:00                 # Maximum runtime
 #SBATCH --export=NONE                   # Do not inherit environment from submitting shell
 
@@ -46,5 +46,5 @@ echo "[$(date)] All checks passed. Ready to run training script."
 
 
 # Run training script with staged data
-srun python src/train.py --data_root=$TMPDIR/datasets/composite_dataset
+srun python src/train.py --data_root=$TMPDIR/datasets/composite_dataset --run_name=$SLURM_JOB_ID
 
