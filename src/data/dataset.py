@@ -1,17 +1,18 @@
 from torch.utils.data import Dataset
 from PIL import Image
-import torchvision.transforms as T
+import torchvision.transforms.functional as F
+
 import os
-from pathlib import Path
-from glob import glob
+
 import numpy as np
 import random
 
 class EFormerDataset(Dataset):
-    def __init__(self, root_dir, transform, p_flip):
+    def __init__(self, root_dir, size, p_flip, device):
         self.root_dir = root_dir
-        self.transform = transform
+        self.size = size
         self.pairs = []
+        self.device= device
         
         self.com_dir= os.path.join(root_dir, 'composites')
         self.pha_dir= os.path.join(root_dir, 'pha')
@@ -38,15 +39,16 @@ class EFormerDataset(Dataset):
         composite = Image.open(composite_path).convert("RGB")
         pha = Image.open(pha_path).convert("L")  # Alpha is grayscale
         
+        composite = F.to_tensor(composite).to(self.device)
+        pha = F.to_tensor(pha).to(self.device)
+        
         #random horizontal flipping
         if random.random() < self.p_flip:  
-            composite = composite.transpose(Image.FLIP_LEFT_RIGHT)
-            pha = pha.transpose(Image.FLIP_LEFT_RIGHT)
+            composite = F.hflip(composite)
+            pha = F.hflip(pha)
             
-        if self.transform:
-            composite = self.transform(composite)
-            pha = self.transform(pha)
-            
+        composite = F.resize(composite, self.size)
+        pha = F.resize(pha, self.size)
        
         return composite, pha
 

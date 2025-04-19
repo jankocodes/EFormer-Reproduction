@@ -32,25 +32,20 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 print(f"Device: {device}")
 
-transform = transforms.Compose([
-    transforms.Resize((224,224)),  
-    transforms.ToTensor(),  
-])
-
-print("Loading data...", flush=True)
-
 # Load dataset with augmentation
 train_dataset = EFormerDataset(root_dir=data_root+'/train',
-                               transform=transform,
-                               p_flip=0.5)
+                               size=(224, 224),
+                               p_flip=0.5,
+                               device= device)
 
 val_dataset= EFormerDataset(root_dir=data_root+'/val',
-                            transform=transform,
-                            p_flip=0)
+                            size=(224,224),
+                            p_flip=0,
+                            device= device)
 
 
-train_loader = DataLoader(train_dataset, batch_size=24, shuffle=True)
-val_loader= DataLoader(val_dataset, batch_size=24, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=24, shuffle=True, num_workers=4, pin_memory=True)
+val_loader= DataLoader(val_dataset, batch_size=24, shuffle=False, num_workers=4, pin_memory=True)
 
 model = EFormer().to(device)  
 
