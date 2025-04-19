@@ -28,7 +28,7 @@ debug_logs
 
 #ignore slurm
 *.slurm
-
+train.slurm
 #ignore logs
 *.out
 *.err

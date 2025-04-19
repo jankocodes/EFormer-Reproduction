@@ -93,8 +93,8 @@ for epoch in range(num_epochs):
     json_log[epoch] = results
     
     print(f"Epoch [{epoch+1}/{num_epochs}] | Train Loss: {results['train_loss']:.4f} | "
-    f"Val Loss: {results['val_loss']:.4f} | MAD: {results['mad']:.3f} | "
-    f"MSE: {results['mse']:.3f} | Grad: {results['grad']:.3f} | Conn: {results['conn']:.3f}", flush=True)
+    f"Val Loss: {results['val_loss']:.4f} | MAD: {results['mad']*1e3:.3f} | "
+    f"MSE: {results['mse']*1e3:.3f} | Grad: {results['grad']*1e-3:.3f} | Conn: {results['conn']*1e-3:.3f}", flush=True)
     
     #save best model
     val_loss= results["val_loss"]
@@ -107,11 +107,13 @@ for epoch in range(num_epochs):
     if (epoch + 1) % 5 == 0:
         torch.save(model.state_dict(), f"experiments/checkpoints/eformer_epoch{epoch+1}.pth")
     
+    #save results    
+    with open("experiments/logs/metrics_log.json", "w") as f:
+        json.dump(json_log, f, indent=4)
+        
     scheduler.step()  # Apply learning rate decay
     
 print("Training finished.", flush=True)
 
-#save results    
-with open("experiments/logs/metrics_log.json", "w") as f:
-    json.dump(json_log, f, indent=4)
+
 
