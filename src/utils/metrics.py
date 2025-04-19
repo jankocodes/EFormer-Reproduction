@@ -4,50 +4,55 @@ import torch.nn.functional as F
 
 #MAD
 def mean_absolute_deviation(pred: torch.Tensor, target: torch.Tensor):
+
     """
-    Compute Mean Absolute Deviation (MAD) between predicted and ground truth alpha mattes.
+    Compute Mean Absolute Deviation (MAD) between predicted and target alpha matte.
     
     Args:
-    - pred (Tensor): Predicted alpha matte (B, 1, H, W)
-    - target (Tensor): Ground truth alpha matte (B, 1, H, W)
+    - pred (Tensor): Predicted matte (1, 1, H, W)
+    - target (Tensor): Target matte (1, 1, H, W)
     
     Returns:
-    - Tensor: MAD value
+    - Tensor: Mean absolute deviation value
     """
+
     return torch.mean(torch.abs(pred - target))
 
     
 #MSE
-def mean_squared_error(pred: torch.Tensor, targets: torch.Tensor):
+def mean_squared_error(pred: torch.Tensor, target: torch.Tensor):
+    
+    
     
     """
-    Compute Mean Squared Error (MSE) between predicted and ground truth alpha mattes.
-
+    Compute Mean Squared Error (MSE) between predicted and ground truth alpha matte.
+    
     Args:
-    - pred (Tensor): Predicted alpha matte (B, 1, H, W)
-    - targets (Tensor): Ground truth alpha matte (B, 1, H, W)
-
+    - pred (Tensor): Predicted alpha matte (1, 1, H, W)
+    - target (Tensor): Ground truth alpha matte (1, 1, H, W)
+    
     Returns:
     - Tensor: MSE value
     """
-    
-    return torch.mean((pred-targets)**2)
+    return torch.mean((pred-target)**2)
     
 #Grad  
 def gradient_loss(pred: torch.Tensor, target: torch.Tensor):
     
+  
     """
-    Compute the gradient loss between the predicted and ground truth alpha mattes.
-    
-    This loss uses the Sobel operator to compute the gradient magnitude of both the predicted and ground truth alpha mattes.
-    The difference between the two gradient magnitudes is then computed and the mean absolute difference is returned.
-    
+    Compute Gradient Loss between predicted and ground truth alpha mattes.
+
+    Gradient Loss measures the difference of gradient magnitudes between predicted
+    and ground truth alpha mattes. It is defined as the mean absolute difference
+    between the gradient magnitudes of the predicted and target alpha mattes.
+
     Args:
-    - pred (Tensor): Predicted alpha matte (B, 1, H, W)
-    - target (Tensor): Ground truth alpha matte (B, 1, H, W)
-    
+        pred (Tensor): Predicted alpha matte (1, 1, H, W)
+        target (Tensor): Ground truth alpha matte (1, 1, H, W)
+
     Returns:
-    - Tensor: Gradient loss value
+        Tensor: Gradient Loss value
     """
     def compute_gradient(image: torch.Tensor):
         
@@ -70,47 +75,47 @@ def gradient_loss(pred: torch.Tensor, target: torch.Tensor):
         
         return grad_magnitude
     
-    batch_size= pred.shape[0]
     
     grad_pred = compute_gradient(pred)
     grad_target = compute_gradient(target)
 
-    return torch.sum(torch.abs(grad_pred - grad_target))/batch_size
+    return torch.sum(torch.abs(grad_pred - grad_target))
 
 
 #Conn
 def connectivity_loss(pred: torch.Tensor, target: torch.Tensor, step= 0.1):
         
+ 
         """
         Compute connectivity loss between predicted and ground truth alpha mattes.
-        
-        This loss evaluates the predicted alpha matte at multiple threshold levels and computes the difference in connectivity between the predicted and ground truth binary masks at each threshold.
-        
+
+        This loss measures the difference in connectivity between the predicted and ground truth alpha mattes.
+        Connectivity is measured by thresholding the alpha matte values and computing the absolute difference between the two binary masks.
+
         Args:
-        - pred (Tensor): Predicted alpha matte (B, 1, H, W)
-        - target (Tensor): Ground truth alpha matte (B, 1, H, W)
-        - step (float): Step size for threshold values
-        
+        - pred (Tensor): Predicted alpha matte (1, 1, H, W)
+        - target (Tensor): Ground truth alpha matte (1, 1, H, W)
+        - step (float, optional): Incremental step for thresholding the alpha matte values. Defaults to 0.1.
+
         Returns:
         - Tensor: Connectivity loss value
         """
-        batch_size= pred.shape[0]
-        loss= 0.0
+        pred_pha = pred[0, 0]  # Shape (H, W) for the first and only sample
+        target_pha = target[0, 0]  # Shape (H, W) for the first and only sample
         
-        for i in range(batch_size):
-            pred_pha= pred[i, 0]
-            target_pha= target[i, 0]    
-                        
-            for threshold in torch.arange(start=step, end=1.0, step=step, device=pred.device):
-                
-                #generate binary masks 
-                pred_mask = (pred_pha >= threshold).float()
-                target_mask = (target_pha >= threshold).float()
-                
-                #compute connectivity difference
-                loss+= torch.sum(torch.abs(pred_mask- target_mask)) 
+        loss = 0.0
         
-        return loss/batch_size
+        # Compute connectivity loss for each threshold value
+        for threshold in torch.arange(start=step, end=1.0, step=step, device=pred.device):
+            
+            # Generate binary masks
+            pred_mask = (pred_pha >= threshold).float()
+            target_mask = (target_pha >= threshold).float()
+            
+            # Compute connectivity difference
+            loss += torch.sum(torch.abs(pred_mask - target_mask))  # Sum the absolute differences
+        
+        return loss
                 
                 
                 

@@ -17,7 +17,7 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
         loss.backward()
         optimizer.step()
 
-        train_loss += loss.item()
+        train_loss += loss.item
 
     
     with torch.no_grad():
@@ -31,7 +31,8 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
         for images, labels in val_loader:
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
-
+            
+            #adapt metrics to per image metrics
             val_loss += criterion(outputs, labels).item()
             total_mad += mean_absolute_deviation(outputs, labels).item()
             total_mse += mean_squared_error(outputs, labels).item()
@@ -40,7 +41,7 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
 
 
         N = len(val_loader)
-        avg_train_loss = train_loss / N
+        avg_train_loss = train_loss / len(train_loader)
         avg_val_loss = val_loss / N
         avg_mad = total_mad / N
         avg_mse = total_mse / N

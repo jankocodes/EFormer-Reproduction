@@ -32,3 +32,6 @@ debug_logs
 #ignore logs
 *.out
 *.err
+
+#ignore debugging
+debug.py
