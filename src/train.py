@@ -1,35 +1,15 @@
 import json
-print("json imported", flush=True)
-
+import os
 import argparse
-print("argparse imported", flush=True)
-
 import torch 
-print("torch imported", flush=True)
-
 import torchvision.transforms as transforms
-print("torchvision.transforms imported", flush=True)
-
 import torch.optim as optim
-print("torch.optim imported", flush=True)
-
 from torch.utils.data import DataLoader
-print("torch.utils.data imported", flush=True)
-
 from data.dataset import EFormerDataset
-print("EFormerDataset imported from data.dataset", flush=True)
-
 from models.eformer import EFormer
-print("EFormer imported from models.eformer", flush=True)
-
 from torch.optim.lr_scheduler import StepLR
-print("StepLR imported", flush=True)
-
 from utils.metrics import *
-print("utils.metrics imported", flush=True)
-
 from utils.training import train
-print("train imported from utils.training", flush=True)
 
 
 
@@ -41,9 +21,12 @@ args = parser.parse_args()
 data_root = args.data_root
 run_name = args.run_name
 
-data_root = args.data_root
-
+#create logging dirs 
 json_log = {}
+checkpoint_dir = f"experiments/checkpoints/{run_name}"
+log_dir= f"experiments/logs/{run_name}"
+os.makedirs(checkpoint_dir, exist_ok=True)
+os.makedirs(log_dir, exist_ok=True)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -104,15 +87,15 @@ for epoch in range(num_epochs):
     val_loss= results["val_loss"]
     if val_loss < best_val_loss:
         best_val_loss = val_loss
-        torch.save(model.state_dict(), f"experiments/checkpoints/{run_name}/best_model.pth")
+        torch.save(model.state_dict(), f"{checkpoint_dir}/best_model.pth")
         print(f"New best model saved (Epoch {epoch+1})", flush=True)
 
     #save every 5 epochs
     if (epoch + 1) % 5 == 0:
-        torch.save(model.state_dict(), f"experiments/checkpoints/{run_name}/eformer_epoch{epoch+1}.pth")
+        torch.save(model.state_dict(), f"{checkpoint_dir}/eformer_epoch{epoch+1}.pth")
     
     #save results    
-    with open(f"experiments/logs/{run_name}/metrics_log.json", "w") as f:
+    with open(f"{log_dir}/metrics_log.json", "w") as f:
         json.dump(json_log, f, indent=4)
         
     scheduler.step()  # Apply learning rate decay
