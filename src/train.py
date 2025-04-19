@@ -1,3 +1,8 @@
+import torch.multiprocessing as mp
+
+# Set the multiprocessing start method to 'spawn'
+mp.set_start_method('spawn', force=True)
+
 import json
 import os
 import argparse
@@ -44,8 +49,8 @@ val_dataset= EFormerDataset(root_dir=data_root+'/val',
                             device= device)
 
 
-train_loader = DataLoader(train_dataset, batch_size=24, shuffle=True, num_workers=4, pin_memory=True)
-val_loader= DataLoader(val_dataset, batch_size=24, shuffle=False, num_workers=4, pin_memory=True)
+train_loader = DataLoader(train_dataset, batch_size=24, shuffle=True, num_workers=8)
+val_loader= DataLoader(val_dataset, batch_size=24, shuffle=False, num_workers=8)
 
 model = EFormer().to(device)  
 
