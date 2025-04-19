@@ -40,6 +40,7 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
 
 
         N = len(val_loader)
+        avg_train_loss = train_loss / N
         avg_val_loss = val_loss / N
         avg_mad = total_mad / N
         avg_mse = total_mse / N
@@ -47,7 +48,7 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
         avg_conn = total_conn / N
 
     results = {}
-    results["train_loss"] = train_loss
+    results["train_loss"] = avg_train_loss
     results["val_loss"] = avg_val_loss
     results["mad"] = avg_mad
     results["mse"] = avg_mse
