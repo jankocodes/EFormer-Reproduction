@@ -8,11 +8,11 @@ import numpy as np
 import random
 
 class EFormerDataset(Dataset):
-    def __init__(self, root_dir, size, p_flip, device):
+    def __init__(self, root_dir, size, p_flip):
         self.root_dir = root_dir
         self.size = size
         self.pairs = []
-        self.device= device
+    
         
         self.com_dir= os.path.join(root_dir, 'composites')
         self.pha_dir= os.path.join(root_dir, 'pha')
@@ -51,14 +51,6 @@ class EFormerDataset(Dataset):
         # Convert images to tensors (on CPU by default)
         composite = F.to_tensor(composite)
         pha = F.to_tensor(pha)
-        
-        # Pin memory (on CPU tensors) before moving to device (GPU)
-        composite = composite.pin_memory()
-        pha = pha.pin_memory()
-
-        # Move tensors to device (GPU)
-        composite = composite.to(self.device, non_blocking=True)
-        pha = pha.to(self.device, non_blocking=True)
         
         return composite, pha
 

@@ -9,7 +9,7 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
     model.train()
     train_loss = 0.0
     for images, labels in train_loader:
-        images, labels = images.to(device), labels.to(device)
+        images, labels = images.to(device, non_blocking= True), labels.to(device, non_blocking= True)
 
         optimizer.zero_grad()
         outputs = model(images)
@@ -30,7 +30,7 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
         model.eval()
         n_images= 0
         for images, labels in val_loader:
-            images, labels = images.to(device), labels.to(device)
+            images, labels = images.to(device, non_blocking= True), labels.to(device, non_blocking= True)
             outputs = model(images)
             
             val_loss += criterion(outputs, labels).item()

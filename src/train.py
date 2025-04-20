@@ -1,6 +1,3 @@
-
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_root', type=str, required=True, help='Path to composite dataset')
@@ -24,17 +21,22 @@ def main():
     # Load dataset with augmentation
     train_dataset = EFormerDataset(root_dir=data_root+'/train',
                                 size=(224, 224),
-                                p_flip=0.5,
-                                device= device)
+                                p_flip=0.5)
 
     val_dataset= EFormerDataset(root_dir=data_root+'/val',
                                 size=(224,224),
-                                p_flip=0,
-                                device= device)
+                                p_flip=0)
 
 
-    train_loader = DataLoader(train_dataset, batch_size=24, shuffle=True, num_workers=8)
-    val_loader= DataLoader(val_dataset, batch_size=24, shuffle=False, num_workers=8)
+    train_loader = DataLoader(train_dataset, batch_size=24, shuffle=True, num_workers=8,
+    pin_memory=True,
+    persistent_workers=True  # optional
+    )
+    
+    val_loader= DataLoader(val_dataset, batch_size=24, shuffle=False, num_workers=8,
+    pin_memory=True,
+    persistent_workers=True  # optional
+    )
 
     model = EFormer().to(device)  
 
@@ -49,9 +51,28 @@ def main():
 
     best_val_loss= float('inf')
 
+    # Debugging ############################################################################
     print("Start training: ", flush=True)
+    
+    print(f"[DEBUG] Model on device: {next(model.parameters()).device}", flush=True)
+    
+    for name, param in model.named_parameters():
+        print(f"{name} -> {param.device}")
+
+
+    for images, labels in train_loader:
+        print(f"[DEBUG] Images on: {images.device}, Labels on: {labels.device}", flush=True)
+        break
+    
+    for images, labels in val_loader:
+        print(f"[DEBUG] Images on: {images.device}, Labels on: {labels.device}", flush=True)
+        break
+    ########################################################################################
+
 
     for epoch in range(num_epochs):
+        print(f"[DEBUG] Model still on: {next(model.parameters()).device}")
+
         
         results= train(model=model,
                 train_loader=train_loader,
