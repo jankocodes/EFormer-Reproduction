@@ -3,10 +3,10 @@ from models.branches import SCD, CEEB, SEB
 import torch
 
 class TransformerBlock(nn.Module):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, use_ca= True, use_sa= True, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.scd= SCD()
+        self.scd= SCD(use_ca=use_ca, use_sa=use_sa)
         self.ceeb= CEEB()
         self.seb= SEB()
     

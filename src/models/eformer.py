@@ -4,7 +4,7 @@ from models.transformer import TransformerBlock
 import torch
 
 class EFormer(nn.Module):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, use_ca= True, use_sa= True, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
         #backbone
@@ -15,10 +15,10 @@ class EFormer(nn.Module):
         
         # transformer
         self.transformer_blocks = nn.Sequential(
-            TransformerBlock(),
-            TransformerBlock(),
-            TransformerBlock(),
-            TransformerBlock()
+            TransformerBlock(use_ca=use_ca, use_sa=use_sa),
+            TransformerBlock(use_ca=use_ca, use_sa=use_sa),
+            TransformerBlock(use_ca=use_ca, use_sa=use_sa),
+            TransformerBlock(use_ca=use_ca, use_sa=use_sa)
         )
         
         #prediction stage

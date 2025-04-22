@@ -71,7 +71,7 @@ def main():
 
 
     for epoch in range(num_epochs):
-        print(f"[DEBUG] Model still on: {next(model.parameters()).device}")
+        print(f"[DEBUG] Model still on: {next(model.parameters()).device}", flush=True)
 
         
         results= train(model=model,
