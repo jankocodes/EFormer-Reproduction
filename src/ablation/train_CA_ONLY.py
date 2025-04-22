@@ -56,7 +56,6 @@ def main():
 
 
     for epoch in range(num_epochs):
-
         
         results= train(model=model,
                 train_loader=train_loader,
@@ -99,8 +98,11 @@ if __name__=="__main__":
     # Set the multiprocessing start method to 'spawn'
     mp.set_start_method('spawn', force=True)
 
-    import json
+    import sys
     import os
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+    import json
     import argparse
     import torch 
     import torchvision.transforms as transforms

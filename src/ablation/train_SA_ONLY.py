@@ -97,9 +97,11 @@ if __name__=="__main__":
 
     # Set the multiprocessing start method to 'spawn'
     mp.set_start_method('spawn', force=True)
+    import sys
+    import os
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
     import json
-    import os
     import argparse
     import torch 
     import torchvision.transforms as transforms
