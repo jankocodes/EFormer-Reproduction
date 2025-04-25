@@ -71,7 +71,7 @@ class EFormer(nn.Module):
         matte= self.head(fused_features)
         
         #upsample to original size
-        matte= nn.functional.interpolate(matte, (H,W))
+        matte= nn.functional.interpolate(matte, size=(H,W), mode='bilinear', align_corners=False)
         
         matte= self.sigmoid(matte)
 
