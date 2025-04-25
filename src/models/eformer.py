@@ -32,6 +32,8 @@ class EFormer(nn.Module):
 
         self.conv_fuse = nn.Conv2d(256, 256, kernel_size=3,padding=1)
         
+        self.upsample_semantic_contour = nn.ConvTranspose2d(256, 256, kernel_size=4, stride=2, padding=1)
+        
         self.head= nn.Conv2d(256, 1, kernel_size=3, padding=1 )
         
         self.sigmoid= nn.Sigmoid()
@@ -77,8 +79,10 @@ class EFormer(nn.Module):
         
         #upsample transformer output if hr_dim != 1_4
         if f_semantic_contour.shape[2:] != f_enc.shape[2:]:
-            f_semantic_contour_up = nn.functional.interpolate(
-                f_semantic_contour, size=f_enc.shape[2:], mode='bilinear', align_corners=False) #adapt to transConv
+            #f_semantic_contour_up = nn.functional.interpolate(
+                #f_semantic_contour, size=f_enc.shape[2:], mode='bilinear', align_corners=False) 
+                
+            f_semantic_contour_up= self.upsample_semantic_contour(f_semantic_contour)
         else:
             f_semantic_contour_up= f_semantic_contour
                 
