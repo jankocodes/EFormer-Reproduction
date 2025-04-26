@@ -2,10 +2,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_root', type=str, required=True, help='Path to composite dataset')
     parser.add_argument('--run_name', type=str, required=True, help='Name of the current training run')
+    parser.add_argument('--use_sa', type= lambda x: str(x).lower()=="true", default=True, help='Use self-attention layers')
+    parser.add_argument('--use_ca', type= lambda x: str(x).lower()=="true", default=True, help='Use cross-attention layers')
+    parser.add_argument('--first_upsampling', type= str, default='bilinear', choices=['bilinear', 'transconv'], help='First upsampling method')
+    parser.add_argument('--second_upsampling', type= str, default='transconv', choices=['bilinear', 'transconv'], help='Second upsampling method')
     args = parser.parse_args()
 
     data_root = args.data_root
     run_name = args.run_name
+    use_sa= args.use_sa
+    use_ca= args.use_ca
+    first_upsampling= args.first_upsampling
+    second_upsampling= args.second_upsampling
 
     #create logging dirs 
     json_log = {}
@@ -30,15 +38,18 @@ def main():
 
     train_loader = DataLoader(train_dataset, batch_size=24, shuffle=True, num_workers=8,
     pin_memory=True,
-    persistent_workers=True  # optional
+    persistent_workers=True  
     )
     
     val_loader= DataLoader(val_dataset, batch_size=24, shuffle=False, num_workers=8,
     pin_memory=True,
-    persistent_workers=True  # optional
+    persistent_workers=True 
     )
 
-    model = EFormer().to(device)  
+    model = EFormer(use_sa=use_sa,
+                    use_ca= use_ca,
+                    first_upsampling=first_upsampling,
+                    second_upsampling=second_upsampling).to(device)  
 
     criterion= torch.nn.BCELoss()
 
