@@ -59,14 +59,6 @@ def main():
     for name, param in model.named_parameters():
         print(f"{name} -> {param.device}")
 
-
-    for images, labels in train_loader:
-        print(f"[DEBUG] Images on: {images.device}, Labels on: {labels.device}", flush=True)
-        break
-    
-    for images, labels in val_loader:
-        print(f"[DEBUG] Images on: {images.device}, Labels on: {labels.device}", flush=True)
-        break
     ########################################################################################
 
 
