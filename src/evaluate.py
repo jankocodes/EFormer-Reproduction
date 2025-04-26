@@ -1,14 +1,22 @@
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, required=True, help='Path to the model')
     parser.add_argument('--data_root', type=str, required=True, help='Path to composite dataset')
+    parser.add_argument('--model_path', type=str, required=True, help='Path to the model')
     parser.add_argument('--run_name', type=str, required=True, help='Name of the current training run')
+    parser.add_argument('--use_sa', type= lambda x: str(x).lower()=="true", default=True, help='Use self-attention layers')
+    parser.add_argument('--use_ca', type= lambda x: str(x).lower()=="true", default=True, help='Use cross-attention layers')
+    parser.add_argument('--first_upsampling', type= str, default='bilinear', choices=['bilinear', 'transconv'], help='First upsampling method')
+    parser.add_argument('--second_upsampling', type= str, default='transconv', choices=['bilinear', 'transconv'], help='Second upsampling method')
     args = parser.parse_args()
 
-    model_path= args.model_path
     data_root = args.data_root
+    model_path= args.model_path
     run_name = args.run_name
+    use_sa= args.use_sa
+    use_ca= args.use_ca
+    first_upsampling= args.first_upsampling
+    second_upsampling= args.second_upsampling
 
     #create logging dirs 
     json_log = {}
@@ -34,8 +42,12 @@ def main():
     )
 
     #Load trained model
-    model = EFormer().to(device)
-    state_dict= torch.load(model_path ,map_location=torch.device('cpu'))
+    model = EFormer(use_sa=use_sa,
+                    use_ca=use_ca,
+                    first_upsampling=first_upsampling,
+                    second_upsampling=second_upsampling).to(device)
+    
+    state_dict= torch.load(model_path ,map_location=device)
     model.load_state_dict(state_dict)  
 
     criterion= torch.nn.BCELoss()
@@ -54,8 +66,8 @@ def main():
     f"MSE: {results['mse']*1e3:.3f} | Grad: {results['grad']*1e-3:.3f} | Conn: {results['conn']*1e-3:.3f}", flush=True)
     
     #save results    
-    #with open(f"{log_dir}/metrics_log.json", "w") as f:
-    #    json.dump(json_log, f, indent=4)
+    with open(f"{log_dir}/metrics_log.json", "w") as f:
+        json.dump(json_log, f, indent=4)
     print(json_log)
             
     print("Evaluation finished.", flush=True)

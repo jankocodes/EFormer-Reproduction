@@ -27,6 +27,7 @@ def evaluate(model: EFormer, test_loader: DataLoader, criterion, device):
                 total_grad += gradient_loss(outputs[i:i+1], labels[i:i+1]).item()
                 total_conn += connectivity_loss(outputs[i:i+1], labels[i:i+1]).item()
                 n_images+=1
+            break
                 
 
 
