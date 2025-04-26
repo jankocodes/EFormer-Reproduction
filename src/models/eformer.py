@@ -113,7 +113,7 @@ class EFormer(nn.Module):
         #upsample transformer output if hr_dim != 1_4
         if f_semantic_contour.shape[2:] != f_enc.shape[2:]:
         
-            f_semantic_contour_up= self.upsample_semantic_contour_features(f_semantic_contour)
+            f_semantic_contour_up= self.upsample_semantic_contour_features(f_semantic_contour, size=f_enc.shape[2:])
         else:
             f_semantic_contour_up= f_semantic_contour
                 
