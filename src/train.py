@@ -2,6 +2,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_root', type=str, required=True, help='Path to composite dataset')
     parser.add_argument('--run_name', type=str, required=True, help='Name of the current training run')
+    parser.add_argument('--out_dir', type=str, required=True, help='Output directory of logs/checkpoints')
     parser.add_argument('--use_sa', type= lambda x: str(x).lower()=="true", default=True, help='Use self-attention layers')
     parser.add_argument('--use_ca', type= lambda x: str(x).lower()=="true", default=True, help='Use cross-attention layers')
     parser.add_argument('--first_upsampling', type= str, default='bilinear', choices=['bilinear', 'transconv'], help='First upsampling method')
@@ -10,6 +11,7 @@ def main():
 
     data_root = args.data_root
     run_name = args.run_name
+    out_dir= args.out_dir
     use_sa= args.use_sa
     use_ca= args.use_ca
     first_upsampling= args.first_upsampling
@@ -17,8 +19,8 @@ def main():
 
     #create logging dirs 
     json_log = {}
-    checkpoint_dir = f"experiments/checkpoints/{run_name}"
-    log_dir= f"experiments/logs/{run_name}"
+    checkpoint_dir = f"{out_dir}/checkpoints/"
+    log_dir= f"{out_dir}"
     os.makedirs(checkpoint_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
 
@@ -65,7 +67,7 @@ def main():
     # Debugging ############################################################################
     print("Start training: ", flush=True)
     
-    print(f"[DEBUG] Model on device: {next(model.parameters()).device}", flush=True)
+    print(f"Model on device: {next(model.parameters()).device}", flush=True)
     
     for name, param in model.named_parameters():
         print(f"{name} -> {param.device}")
@@ -103,7 +105,7 @@ def main():
             torch.save(model.state_dict(), f"{checkpoint_dir}/eformer_epoch{epoch+1}.pth")
         
         #save results    
-        with open(f"{log_dir}/metrics_log.json", "w") as f:
+        with open(f"{log_dir}/train_metrics.json", "w") as f:
             json.dump(json_log, f, indent=4)
             
         scheduler.step()  # Apply learning rate decay

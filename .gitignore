@@ -27,8 +27,8 @@ experiments/logs/*
 debug_logs
 
 #ignore slurm
-*.slurm
-train.slurm
+debug.slurm
+
 #ignore logs
 *.out
 *.err
