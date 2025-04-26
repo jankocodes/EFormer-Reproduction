@@ -4,11 +4,21 @@ from models.transformer import TransformerBlock
 import torch
 
 class EFormer(nn.Module):
-    def __init__(self, use_ca= True, use_sa= True, hr_dim= "1_8", lr_dim= "1_16", *args, **kwargs):
+    def __init__(self,
+                 use_ca= True,
+                 use_sa= True,
+                 hr_dim= "1_8",
+                 lr_dim= "1_16",
+                 first_upsampling= "bilinear",
+                 second_upsampling= "transConv",
+                 *args, **kwargs):
+        
         super().__init__(*args, **kwargs)
         
         self.hr_dim= hr_dim
         self.lr_dim= lr_dim
+        self.first_upsampling= first_upsampling
+        self.second_upsampling= second_upsampling
         
         #backbone
         self.backbone= Backbone()
@@ -16,7 +26,9 @@ class EFormer(nn.Module):
         channels = {"1_4": 256, "1_8": 512, "1_16": 1024}
         self.proj_hr = nn.Conv2d(channels[hr_dim], 256, kernel_size=1)
         self.proj_lr = nn.Conv2d(channels[lr_dim], 256, kernel_size=1)
-
+        
+        if self.first_upsampling=="transconv":
+            self.first_transconv= nn.ConvTranspose2d(256, 256, kernel_size=4, stride=2, padding=1)
         
         # transformer
         self.transformer_blocks = nn.Sequential(
@@ -32,12 +44,35 @@ class EFormer(nn.Module):
 
         self.conv_fuse = nn.Conv2d(256, 256, kernel_size=3,padding=1)
         
-        self.upsample_semantic_contour = nn.ConvTranspose2d(256, 256, kernel_size=4, stride=2, padding=1)
+        if second_upsampling== "transconv":
+            self.second_transconv = nn.ConvTranspose2d(256, 256, kernel_size=4, stride=2, padding=1)
         
         self.head= nn.Conv2d(256, 1, kernel_size=3, padding=1 )
         
         self.sigmoid= nn.Sigmoid()
         
+    def upsample_lr_features(self, x, size):
+        if self.first_upsampling == 'bilinear':
+            return nn.functional.interpolate(x, size=size, mode='bilinear', align_corners=False)
+       
+        elif self.first_upsampling == 'transconv':     
+            out = self.first_transconv(x)
+            return out
+        
+        else:
+            raise ValueError(f"Unsupported upsampling method: {self.first_upsampling}")
+        
+    
+    def upsample_semantic_contour_features(self, x, size):
+        if self.second_upsampling == 'bilinear':
+            return nn.functional.interpolate(x, size=size, mode='bilinear', align_corners=False)
+        
+        elif self.second_upsampling == 'transconv':
+            out = self.second_transconv(x)
+            return out
+        
+        else:
+            raise ValueError(f"Unsupported upsampling method: {self.second_upsampling}")
     
     def forward(self, x):
  
@@ -53,9 +88,7 @@ class EFormer(nn.Module):
         f_lr = self.proj_lr(f_lr) #(B,256,lr_dim,lr_dim)
         
         #upsample lr_features to hr_dim
-        f_lr_upsampled = nn.functional.interpolate(
-            f_lr, size=f_hr.shape[2:], mode='bilinear', align_corners=False #(B,256,hr_dim,hr_dim)
-        )
+        f_lr_upsampled = self.upsample_lr_features(f_lr, size=f_hr.shape[2:])
 
         #(B,256, hr_dim, hr_dim) -> (N,B,256)
         f_hr_emb = f_hr.flatten(2).permute(2, 0, 1)  
@@ -79,10 +112,8 @@ class EFormer(nn.Module):
         
         #upsample transformer output if hr_dim != 1_4
         if f_semantic_contour.shape[2:] != f_enc.shape[2:]:
-            #f_semantic_contour_up = nn.functional.interpolate(
-                #f_semantic_contour, size=f_enc.shape[2:], mode='bilinear', align_corners=False) 
-                
-            f_semantic_contour_up= self.upsample_semantic_contour(f_semantic_contour)
+        
+            f_semantic_contour_up= self.upsample_semantic_contour_features(f_semantic_contour)
         else:
             f_semantic_contour_up= f_semantic_contour
                 
