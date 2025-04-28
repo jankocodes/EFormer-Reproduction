@@ -3,6 +3,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_root', type=str, required=True, help='Path to composite dataset')
     parser.add_argument('--model_path', type=str, required=True, help='Path to the model')
+    parser.add_argument('--out_dir', type=str, required=True, help='Output directory of logs/checkpoints')
     parser.add_argument('--run_name', type=str, required=True, help='Name of the current training run')
     parser.add_argument('--use_sa', type= lambda x: str(x).lower()=="true", default=True, help='Use self-attention layers')
     parser.add_argument('--use_ca', type= lambda x: str(x).lower()=="true", default=True, help='Use cross-attention layers')
@@ -12,6 +13,7 @@ def main():
 
     data_root = args.data_root
     model_path= args.model_path
+    out_dir= args.out_dir
     run_name = args.run_name
     use_sa= args.use_sa
     use_ca= args.use_ca
@@ -20,10 +22,6 @@ def main():
 
     #create logging dirs 
     json_log = {}
-    checkpoint_dir = f"experiments/checkpoints/{run_name}"
-    log_dir= f"experiments/logs/{run_name}"
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    os.makedirs(log_dir, exist_ok=True)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -66,7 +64,7 @@ def main():
     f"MSE: {results['mse']*1e3:.3f} | Grad: {results['grad']*1e-3:.3f} | Conn: {results['conn']*1e-3:.3f}", flush=True)
     
     #save results    
-    with open(f"{log_dir}/evaluation_metrics.json", "w") as f:
+    with open(f"{out_dir}/evaluation_metrics.json", "w") as f:
         json.dump(json_log, f, indent=4)
     print(json_log)
             
