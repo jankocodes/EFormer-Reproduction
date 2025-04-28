@@ -22,8 +22,8 @@ train_test.py
 src/*.ipynb
 
 #ignore test experiments
-experiments/checkpoints/*
-experiments/logs/*
+experiments/*
+
 debug_logs
 
 #ignore slurm

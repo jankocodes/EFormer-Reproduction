@@ -66,7 +66,7 @@ def main():
     f"MSE: {results['mse']*1e3:.3f} | Grad: {results['grad']*1e-3:.3f} | Conn: {results['conn']*1e-3:.3f}", flush=True)
     
     #save results    
-    with open(f"{log_dir}/metrics_log.json", "w") as f:
+    with open(f"{log_dir}/evaluation_metrics.json", "w") as f:
         json.dump(json_log, f, indent=4)
     print(json_log)
             
