@@ -62,6 +62,7 @@ def main():
     #log metrics    
     print(f"Loss: {results['loss']:.4f} | MAD: {results['mad']*1e3:.3f} | "
     f"MSE: {results['mse']*1e3:.3f} | Grad: {results['grad']*1e-3:.3f} | Conn: {results['conn']*1e-3:.3f}", flush=True)
+    json_log= results
     
     #save results    
     with open(f"{out_dir}/evaluation_metrics.json", "w") as f:
