@@ -1,6 +1,8 @@
 # Mean Absolute Difference 
 import torch
 import torch.nn.functional as F
+import numpy as np
+import cv2
 
 #MAD
 def mean_absolute_deviation(pred: torch.Tensor, target: torch.Tensor):
@@ -83,40 +85,45 @@ def gradient_loss(pred: torch.Tensor, target: torch.Tensor):
 
 
 #Conn
-def connectivity_loss(pred: torch.Tensor, target: torch.Tensor, step= 0.1):
-        
- 
-        """
-        Compute connectivity loss between predicted and ground truth alpha mattes.
+def connectivity_loss(pred: torch.Tensor, true: torch.Tensor, step=0.1, threshold=0.15):
+    """
+    Simplified connectivity loss with lambda=1 and no distance weighting.
+    """
+    pred = pred.squeeze().cpu().detach().numpy()
+    true = true.squeeze().cpu().detach().numpy()
 
-        This loss measures the difference in connectivity between the predicted and ground truth alpha mattes.
-        Connectivity is measured by thresholding the alpha matte values and computing the absolute difference between the two binary masks.
+    step = step
+    thresh_steps = np.arange(0, 1 + step, step)
 
-        Args:
-        - pred (Tensor): Predicted alpha matte (1, 1, H, W)
-        - target (Tensor): Ground truth alpha matte (1, 1, H, W)
-        - step (float, optional): Incremental step for thresholding the alpha matte values. Defaults to 0.1.
+    round_down_map = -np.ones_like(true)
 
-        Returns:
-        - Tensor: Connectivity loss value
-        """
-        pred_pha = pred[0, 0]  # Shape (H, W) for the first and only sample
-        target_pha = target[0, 0]  # Shape (H, W) for the first and only sample
-        
-        loss = 0.0
-        
-        # Compute connectivity loss for each threshold value
-        for threshold in torch.arange(start=step, end=1.0, step=step, device=pred.device):
-            
-            # Generate binary masks
-            pred_mask = (pred_pha >= threshold).float()
-            target_mask = (target_pha >= threshold).float()
-            
-            # Compute connectivity difference
-            loss += torch.sum(torch.abs(pred_mask - target_mask))  # Sum the absolute differences
-        
-        return loss
-                
-                
+    for i in range(1, len(thresh_steps)):
+        true_thresh = true >= thresh_steps[i]
+        pred_thresh = pred >= thresh_steps[i]
+        intersection = (true_thresh & pred_thresh).astype(np.uint8)
+
+        # connected components
+        _, output, stats, _ = cv2.connectedComponentsWithStats(intersection, connectivity=4)
+        size = stats[1:, -1]
+
+        omega = np.zeros_like(true)
+        if len(size) != 0:
+            max_id = np.argmax(size)
+            omega[output == max_id + 1] = 1
+
+        mask = (round_down_map == -1) & (omega == 0)
+        round_down_map[mask] = thresh_steps[i-1]
+
+    round_down_map[round_down_map == -1] = 1
+
+    true_diff = true - round_down_map
+    pred_diff = pred - round_down_map
+
+    true_phi = 1 - true_diff * (true_diff >= threshold)
+    pred_phi = 1 - pred_diff * (pred_diff >= threshold)
+
+    connectivity_error = np.sum(np.abs(true_phi - pred_phi))
+    
+    return connectivity_error 
                 
                 

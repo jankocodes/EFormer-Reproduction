@@ -34,7 +34,7 @@ def main():
 
 
 
-    test_loader = DataLoader(test_dataset, batch_size=24, shuffle=True, num_workers=8,
+    test_loader = DataLoader(test_dataset, batch_size=24, shuffle=False, num_workers=8,
     pin_memory=True,
     persistent_workers=True  # optional
     )
