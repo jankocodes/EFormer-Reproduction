@@ -11,6 +11,7 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
     for images, labels in train_loader:
         images, labels = images.to(device, non_blocking= True), labels.to(device, non_blocking= True)
 
+
         optimizer.zero_grad()
         outputs = model(images)
         loss = criterion(outputs, labels)  
@@ -21,6 +22,11 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
 
     
     with torch.no_grad():
+        mad= MetricMAD()
+        mse= MetricMSE()
+        conn= MetricCONN()
+        grad= MetricGRAD()
+        
         val_loss = 0.0
         total_mad = 0.0
         total_mse = 0.0
@@ -37,10 +43,10 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
             
             # Compute image-wise metrics
             for i in range(images.size(0)):
-                total_mad += mean_absolute_deviation(outputs[i:i+1], labels[i:i+1]).item()
-                total_mse += mean_squared_error(outputs[i:i+1], labels[i:i+1]).item()
-                total_grad += gradient_loss(outputs[i:i+1], labels[i:i+1]).item()
-                total_conn += connectivity_loss(outputs[i:i+1], labels[i:i+1]).item()
+                total_mad += mad(outputs[i:i+1], labels[i:i+1]).item()
+                total_mse += mse(outputs[i:i+1], labels[i:i+1]).item()
+                total_grad += grad(outputs[i:i+1], labels[i:i+1]).item()
+                total_conn += conn(outputs[i:i+1], labels[i:i+1]).item()
                 n_images+=1
                 
 
