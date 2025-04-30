@@ -177,7 +177,7 @@ def split_train_set(videomatte240k):
     print(f'Sampled 3007 images into {val_fgr_folder}')
     print(f'Sampled 3007 images into {val_pha_folder}')
     
-def blend_foreground_with_background(split_src, background_folder, split_dest):
+def compose_videomatte240k(split_src, background_folder, split_dest):
     
     """
     Blend foreground images with background images.
@@ -231,3 +231,56 @@ def blend_foreground_with_background(split_src, background_folder, split_dest):
         
         
     print(f'Composed {len(foregrounds)} images and moved them to {split_dest}.')
+def compose_aim(split_src, background_folder, split_dest, n_combinations=20):
+    """
+    Blend foreground images with background images and save composites + alpha mattes.
+    
+    Parameters
+    ----------
+    split_src : str
+        Path to folder with 'fgr' and 'pha' subfolders.
+    background_folder : str
+        Path to folder with background images.
+    split_dest : str
+        Destination base folder with subfolders 'composites' and 'pha'.
+    n_combinations : int
+        Number of backgrounds to composite each foreground with.
+    """
+
+    backgrounds = [f for f in os.listdir(background_folder) if f.endswith('.jpg')]
+    fgr_folder = os.path.join(split_src, 'fgr')
+    pha_folder = os.path.join(split_src, 'pha')
+
+    foregrounds = [f for f in os.listdir(fgr_folder) if f.endswith('.jpg') or f.endswith(".png")]
+    
+    for fgr_filename in foregrounds:
+        fgr_path = os.path.join(fgr_folder, fgr_filename)
+        pha_path = os.path.join(pha_folder, fgr_filename)  # assuming same name for alpha
+
+        fgr = Image.open(fgr_path).convert('RGB')
+        pha = Image.open(pha_path).convert('L')
+
+        fgr_np = np.array(fgr)
+        pha_np = np.array(pha) / 255.0  # Normalize alpha to [0,1]
+
+        selected_bgs = sample(backgrounds, n_combinations)
+
+        for j, bg_filename in enumerate(selected_bgs):
+            bg_path = os.path.join(background_folder, bg_filename)
+            bg = Image.open(bg_path).convert("RGB").resize(fgr.size, Image.BILINEAR)
+            bg_np = np.array(bg)
+
+            # Composite
+            composite_np = (fgr_np * pha_np[..., None] + bg_np * (1 - pha_np[..., None])).astype(np.uint8)
+            composite = Image.fromarray(composite_np)
+
+            # Save paths
+            base_name = os.path.splitext(fgr_filename)[0]
+            comp_save_path = os.path.join(split_dest, 'composites', f"{base_name}_bg{j}.png")
+            alpha_save_path = os.path.join(split_dest, 'pha', f"{base_name}_bg{j}.png")
+
+            # Save
+            composite.save(comp_save_path)
+            Image.fromarray((pha_np * 255).astype(np.uint8)).save(alpha_save_path)
+
+    print(f'Composed {len(foregrounds)} x {n_combinations} images and saved to {split_dest}.')
