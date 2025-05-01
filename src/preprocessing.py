@@ -1,5 +1,5 @@
 from pathlib import Path
-from preprocessing_utils import *
+from data.preprocessing_utils import *
 import os 
 
 if __name__=='__main__':

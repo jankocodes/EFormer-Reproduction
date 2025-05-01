@@ -7,13 +7,13 @@ import cv2
 #MAD
 class MetricMAD:
     def __call__(self, pred, true):
-        return np.abs(pred.detach().numpy() - true.detach().numpy()).mean() 
+        return np.abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy()).mean() 
 
 
 #MSE
 class MetricMSE:
     def __call__(self, pred, true):
-        return ((pred.detach().numpy() - true.detach().numpy()) ** 2).mean()
+        return ((pred.detach().cpu().numpy() - true.detach().cpu().numpy()) ** 2).mean()
     
 #Grad  
 class MetricGRAD:
@@ -21,8 +21,8 @@ class MetricGRAD:
         self.filter_x, self.filter_y = self.gauss_filter(sigma)
     
     def __call__(self, pred: torch.Tensor, true: torch.Tensor):
-        pred= pred.squeeze().detach().numpy()
-        true= true.squeeze().detach().numpy()
+        pred= pred.squeeze().detach().cpu().numpy()
+        true= true.squeeze().detach().cpu().numpy()
         
         pred_normed = np.zeros_like(pred)
         true_normed = np.zeros_like(true)
