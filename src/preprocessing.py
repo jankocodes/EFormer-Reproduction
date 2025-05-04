@@ -47,9 +47,14 @@ if __name__=='__main__':
         os.makedirs(os.path.join(split, 'fgr'), exist_ok=True)
         os.makedirs(os.path.join(split, 'pha'), exist_ok=True)
 
+        if split=="val":
+            bg10k_split= "test"
+        else:
+            bg10k_split= split
+            
         #compose 
         compose_videomatte240k(os.path.join(videomatte240k_path, split),
-                                        os.path.join(bg10k_path, split),
+                                        os.path.join(bg10k_path, bg10k_split),
                                         composite_split_path)
     
     #compose AIM images (each foreground on 20 different backgrounds)
