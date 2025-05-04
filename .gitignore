@@ -28,6 +28,7 @@ debug_logs
 
 #ignore slurm
 debug.slurm
+ablation_scripts
 
 #ignore logs
 *.out
@@ -35,3 +36,4 @@ debug.slurm
 
 #ignore debugging
 debug.py
+

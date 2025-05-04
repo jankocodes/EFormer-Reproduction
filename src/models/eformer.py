@@ -1,7 +1,6 @@
 import torch.nn  as nn
 from models.backbone import Backbone
 from models.transformer import TransformerBlock
-import torch
 
 class EFormer(nn.Module):
     def __init__(self,
@@ -42,7 +41,7 @@ class EFormer(nn.Module):
         self.conv_semantic = nn.Conv2d(256, 256, kernel_size=3,padding=1)
         self.conv_contour = nn.Conv2d(256, 256, kernel_size=3,padding=1)
 
-        self.conv_fuse = nn.Conv2d(256, 256, kernel_size=3,padding=1)
+        self.conv_fuse = nn.Conv2d(256, 256, kernel_size=1)
         
         if second_upsampling== "transconv":
             self.second_transconv = nn.ConvTranspose2d(256, 256, kernel_size=4, stride=2, padding=1)
