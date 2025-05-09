@@ -16,7 +16,7 @@ docs
 
 #ignore test
 test.py
-train_test.py
+data_test.py
 
 #ignore notebooks
 src/*.ipynb

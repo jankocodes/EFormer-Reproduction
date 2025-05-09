@@ -9,16 +9,19 @@ def main():
     parser.add_argument('--use_ca', type= lambda x: str(x).lower()=="true", default=True, help='Use cross-attention layers')
     parser.add_argument('--first_upsampling', type= str, default='bilinear', choices=['bilinear', 'transconv'], help='First upsampling method')
     parser.add_argument('--second_upsampling', type= str, default='transconv', choices=['bilinear', 'transconv'], help='Second upsampling method')
+    parser.add_argument('--hr_resolution', type= str, default='1_8', choices=['1_4', '1_8'], help='Resolution of HR-embedding.')
+    parser.add_argument('--lr_resolution', type= str, default='1_16', choices=[ '1_8', '1_16'], help='Resolution of LR-embedding.')
     args = parser.parse_args()
 
     data_root = args.data_root
     model_path= args.model_path
     out_dir= args.out_dir
-    run_name = args.run_name
     use_sa= args.use_sa
     use_ca= args.use_ca
     first_upsampling= args.first_upsampling
     second_upsampling= args.second_upsampling
+    hr_res= args.hr_resolution
+    lr_res= args.lr_resolution
 
     #create logging dirs 
     json_log = {}
@@ -41,9 +44,11 @@ def main():
 
     #Load trained model
     model = EFormer(use_sa=use_sa,
-                    use_ca=use_ca,
+                    use_ca= use_ca,
                     first_upsampling=first_upsampling,
-                    second_upsampling=second_upsampling).to(device)
+                    second_upsampling=second_upsampling,
+                    hr_dim=hr_res,
+                    lr_dim=lr_res).to(device)  
     
     state_dict= torch.load(model_path ,map_location=device)
     model.load_state_dict(state_dict)  
@@ -80,7 +85,6 @@ if __name__=="__main__":
     mp.set_start_method('spawn', force=True)
 
     import json
-    import os
     import argparse
     import torch 
     from torch.utils.data import DataLoader
