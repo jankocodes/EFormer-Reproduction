@@ -17,6 +17,7 @@ def train(model: EFormer, train_loader: DataLoader, val_loader: DataLoader, crit
         loss = criterion(outputs, labels)  
         loss.backward()
         optimizer.step()
+        torch.cuda.empty_cache()
 
         train_loss += loss.item()
 
