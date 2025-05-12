@@ -65,7 +65,8 @@ def main():
     optimizer = optim.AdamW(model.parameters(), lr=1e-4)
     scheduler = StepLR(optimizer, step_size=5, gamma=0.8)
     best_val_loss= float('inf')
-
+    start_epoch= 0
+    
     #resume training from checkpoint
     if checkpoint_path:
         checkpoint = torch.load(args.checkpoint_path, map_location=device)
@@ -74,7 +75,7 @@ def main():
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
         best_val_loss = checkpoint['best_val_loss']
-        print(f"Resumed from checkpoint: {args.checkpoint_path} at epoch {start_epoch}")
+        print(f"Resumed from checkpoint: {checkpoint_path} at epoch {start_epoch}")
         
 
     criterion= torch.nn.BCELoss()
