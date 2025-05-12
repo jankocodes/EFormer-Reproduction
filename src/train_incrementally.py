@@ -67,7 +67,7 @@ def main():
     best_val_loss= float('inf')
 
     #resume training from checkpoint
-    if checkpoint_dir:
+    if checkpoint_path:
         checkpoint = torch.load(args.checkpoint_path, map_location=device)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
