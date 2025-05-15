@@ -57,7 +57,7 @@ class SCD(nn.Module):
             self_attention,_= self.self_attention(k_sa,q_sa,v_sa)
             f_semantic_contour= self_attention + v_sa 
         else:
-            f_semantic_contour= f_enhance
+            f_semantic_contour= self.enhance_layernorm(f_enhance)
             
         return f_semantic_contour
         

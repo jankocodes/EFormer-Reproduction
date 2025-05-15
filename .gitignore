@@ -17,13 +17,14 @@ docs
 #ignore test
 test.py
 data_test.py
+evaluate_locally.py
 
 #ignore notebooks
 src/*.ipynb
 
 #ignore test experiments
 experiments/*
-
+test
 debug_logs
 
 #ignore slurm
