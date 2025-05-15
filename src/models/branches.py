@@ -43,7 +43,7 @@ class SCD(nn.Module):
             f_enhance= f_contour_edge + v_ca 
         else:
             # Skip CA: use HR-LR mix directly
-            f_enhance= self.hr_lr_layernorm(f_hr_lr_emb)
+            f_enhance= self.hr_lr_layernorm(f_hr_lr_emb) +f_hr_lr_emb
         
         
         if self.use_sa:
@@ -54,10 +54,10 @@ class SCD(nn.Module):
             v_sa= f_enhance_ln 
             
             #perform self-attention
-            self_attention,_= self.self_attention(k_sa,q_sa,v_sa)
-            f_semantic_contour= self_attention + v_sa 
+            att_out,_= self.self_attention(k_sa,q_sa,v_sa)
+            f_semantic_contour= att_out + v_sa 
         else:
-            f_semantic_contour= self.enhance_layernorm(f_enhance)
+            f_semantic_contour= self.enhance_layernorm(f_enhance) +f_enhance
             
         return f_semantic_contour
         
