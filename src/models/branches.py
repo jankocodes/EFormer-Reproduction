@@ -40,7 +40,7 @@ class SCD(nn.Module):
             #perform cross-attention
             f_contour_edge,_= self.cross_attention(k_ca,q_ca,v_ca) 
             
-            f_enhance= f_contour_edge + f_hr_lr_emb 
+            f_enhance= f_contour_edge + v_ca 
         else:
             # Skip CA: use HR-LR mix directly
             f_enhance= f_hr_lr_emb
@@ -55,7 +55,7 @@ class SCD(nn.Module):
             
             #perform self-attention
             att_out,_= self.self_attention(k_sa,q_sa,v_sa)
-            f_semantic_contour= att_out + f_enhance 
+            f_semantic_contour= att_out + v_sa 
         else:
             f_semantic_contour= f_enhance
             

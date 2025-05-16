@@ -20,6 +20,11 @@ def main():
     second_upsampling= args.second_upsampling
     hr_res= args.hr_resolution
     lr_res= args.lr_resolution
+    
+    seed = 42
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
 
     #create logging dirs 
     json_log = {}
