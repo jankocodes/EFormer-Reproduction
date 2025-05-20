@@ -2,6 +2,7 @@ import torch
 from utils.metrics import *
 from models.eformer import EFormer
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 def evaluate(model: EFormer, test_loader: DataLoader, criterion, device):
 
@@ -19,7 +20,7 @@ def evaluate(model: EFormer, test_loader: DataLoader, criterion, device):
 
         model.eval()
         n_images= 0
-        for images, labels in test_loader:
+        for images, labels in tqdm(test_loader, desc="Evaluating", leave=False):
             images, labels = images.to(device, non_blocking= True), labels.to(device, non_blocking= True)
             outputs = model(images)
             
