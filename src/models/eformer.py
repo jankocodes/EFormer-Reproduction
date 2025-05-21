@@ -6,6 +6,8 @@ class EFormer(nn.Module):
     def __init__(self,
                  use_ca= True,
                  use_sa= True,
+                 use_seb= True,
+                 use_ceeb= True,
                  hr_dim= "1_8",
                  lr_dim= "1_16",
                  first_upsampling= "bilinear",
@@ -31,10 +33,10 @@ class EFormer(nn.Module):
         
         # transformer
         self.transformer_blocks = nn.Sequential(
-            TransformerBlock(use_ca=use_ca, use_sa=use_sa),
-            TransformerBlock(use_ca=use_ca, use_sa=use_sa),
-            TransformerBlock(use_ca=use_ca, use_sa=use_sa),
-            TransformerBlock(use_ca=use_ca, use_sa=use_sa)
+            TransformerBlock(use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb),
+            TransformerBlock(use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb),
+            TransformerBlock(use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb),
+            TransformerBlock(use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb)
         )
         
         #prediction stage
