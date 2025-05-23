@@ -11,7 +11,7 @@ class EFormer(nn.Module):
                  hr_dim= "1_8",
                  lr_dim= "1_16",
                  first_upsampling= "bilinear",
-                 second_upsampling= "transConv",
+                 second_upsampling= "transconv",
                  *args, **kwargs):
         
         super().__init__(*args, **kwargs)

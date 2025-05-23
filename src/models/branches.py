@@ -16,13 +16,13 @@ class SCD(nn.Module):
         
         self.positional_enc1= nn.Parameter(torch.zeros(1, 1, 256))
         
-        self.cross_attention= nn.MultiheadAttention(256, 4)
+        self.cross_attention= nn.MultiheadAttention(256, 8)
         
         self.enhance_layernorm= nn.LayerNorm(256)
         
         self.positional_enc2= nn.Parameter(torch.zeros(1,1,256))
         
-        self.self_attention= nn.MultiheadAttention(256, 4)
+        self.self_attention= nn.MultiheadAttention(256, 8)
         
         
     
