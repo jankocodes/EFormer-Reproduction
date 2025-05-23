@@ -14,13 +14,16 @@ class SCD(nn.Module):
         self.lr_layernorm= nn.LayerNorm(256)
         self.hr_lr_layernorm= nn.LayerNorm(256)
         
-        self.positional_enc1= nn.Parameter(torch.zeros(1, 1, 256))
-        
+        self.max_seq_len = 3136  # depends on input resolution
+        self.positional_enc1 = nn.Parameter(torch.zeros(self.max_seq_len, 1, 256))  # (N, 1, D)
+        nn.init.trunc_normal_(self.positional_enc1, std=0.02)     
+           
         self.cross_attention= nn.MultiheadAttention(256, 8)
         
         self.enhance_layernorm= nn.LayerNorm(256)
         
-        self.positional_enc2= nn.Parameter(torch.zeros(1,1,256))
+        self.positional_enc2 = nn.Parameter(torch.zeros(self.max_seq_len, 1, 256))  # (N, 1, D)
+        nn.init.trunc_normal_(self.positional_enc2, std=0.02)
         
         self.self_attention= nn.MultiheadAttention(256, 8)
         
@@ -33,8 +36,9 @@ class SCD(nn.Module):
         
         if self.use_ca:
             #applying layernorm + adding positional encoding for k,q       
-            k_ca= self.hr_layernorm(f_hr_emb) + self.positional_enc1 
-            q_ca= self.lr_layernorm(f_lr_emb) + self.positional_enc1 
+            seq_len = f_hr_lr_emb.size(0)  # N
+            k_ca= self.hr_layernorm(f_hr_emb) + self.positional_enc1[:seq_len]
+            q_ca= self.lr_layernorm(f_lr_emb) + self.positional_enc1[:seq_len]
             v_ca= self.hr_lr_layernorm(f_hr_lr_emb) 
             
             #perform cross-attention
@@ -50,7 +54,8 @@ class SCD(nn.Module):
             #applying layernorm + adding positional encoding for k,q
             f_enhance_ln= self.enhance_layernorm(f_enhance)
             
-            k_sa= q_sa= f_enhance_ln + self.positional_enc2 
+            seq_len = f_enhance_ln.size(0)  # N
+            k_sa= q_sa= f_enhance_ln + self.positional_enc2[:seq_len] 
             v_sa= f_enhance_ln 
             
             #perform self-attention
