@@ -47,25 +47,17 @@ if __name__=='__main__':
         os.makedirs(os.path.join(split, 'fgr'), exist_ok=True)
         os.makedirs(os.path.join(split, 'pha'), exist_ok=True)
 
-        if split=="val":
-            bg10k_split= "test"
-        else:
-            bg10k_split= split
+        bg10k_split= "test" if split=="val" else split
             
         #compose 
         compose_videomatte240k(os.path.join(videomatte240k_path, split),
                                         os.path.join(bg10k_path, bg10k_split),
                                         composite_split_path)
     
-    #compose AIM images (each foreground on 20 different backgrounds)
+    #compose AIM images (each foreground on one backgrounds)
     compose_aim(os.path.join(aim_path, 'train'),
                 os.path.join(bg10k_path, 'train'),
                 os.path.join(composite_dataset_path, 'train'),
-                n_combinations=20
+                n_combinations=1
                 )
     
-    compose_aim(os.path.join(aim_path, 'test'),
-            os.path.join(bg10k_path, 'test'),
-            os.path.join(composite_dataset_path, 'test'),
-            n_combinations=20
-            )
