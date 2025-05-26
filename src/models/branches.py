@@ -3,10 +3,11 @@ import torch.nn as nn
 
 #Semantic & Contour Detector
 class SCD(nn.Module):
-    def __init__(self, use_ca= True, use_sa= True, *args, **kwargs):        
+    def __init__(self, n_heads=8, use_ca= True, use_sa= True, *args, **kwargs):        
         super().__init__(*args, **kwargs)
         
         #for ablation study 
+        self.n_heads=n_heads
         self.use_ca= use_ca
         self.use_sa= use_sa
         
@@ -18,14 +19,14 @@ class SCD(nn.Module):
         self.positional_enc1 = nn.Parameter(torch.zeros(self.max_seq_len, 1, 256))  # (N, 1, D)
         nn.init.trunc_normal_(self.positional_enc1, std=0.02)     
            
-        self.cross_attention= nn.MultiheadAttention(256, 8)
+        self.cross_attention= nn.MultiheadAttention(256, n_heads)
         
         self.enhance_layernorm= nn.LayerNorm(256)
         
         self.positional_enc2 = nn.Parameter(torch.zeros(self.max_seq_len, 1, 256))  # (N, 1, D)
         nn.init.trunc_normal_(self.positional_enc2, std=0.02)
         
-        self.self_attention= nn.MultiheadAttention(256, 8)
+        self.self_attention= nn.MultiheadAttention(256, n_heads)
         
         
     

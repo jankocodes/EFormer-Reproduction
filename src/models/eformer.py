@@ -4,6 +4,7 @@ from models.transformer import TransformerBlock
 
 class EFormer(nn.Module):
     def __init__(self,
+                 n_heads=8,
                  use_ca= True,
                  use_sa= True,
                  use_seb= True,
@@ -33,10 +34,10 @@ class EFormer(nn.Module):
         
         # transformer
         self.transformer_blocks = nn.Sequential(
-            TransformerBlock(use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb),
-            TransformerBlock(use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb),
-            TransformerBlock(use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb),
-            TransformerBlock(use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb)
+            TransformerBlock(n_heads=n_heads, use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb),
+            TransformerBlock(n_heads=n_heads,use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb),
+            TransformerBlock(n_heads=n_heads,use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb),
+            TransformerBlock(n_heads=n_heads,use_ca=use_ca, use_sa=use_sa, use_seb= use_seb, use_ceeb=use_ceeb)
         )
         
         #prediction stage
@@ -113,7 +114,6 @@ class EFormer(nn.Module):
         
         #upsample transformer output if hr_dim != 1_4
         if f_semantic_contour.shape[2:] != f_enc.shape[2:]:
-        
             f_semantic_contour_up= self.upsample_semantic_contour_features(f_semantic_contour, size=f_enc.shape[2:])
         else:
             f_semantic_contour_up= f_semantic_contour

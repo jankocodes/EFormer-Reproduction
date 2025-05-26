@@ -2,14 +2,14 @@ import torch.nn as nn
 from models.branches import SCD, CEEB, SEB
 
 class TransformerBlock(nn.Module):
-    def __init__(self, use_ca= True, use_sa= True, use_seb= True, use_ceeb=True, *args, **kwargs):
+    def __init__(self, n_heads=8, use_ca= True, use_sa= True, use_seb= True, use_ceeb=True, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.use_sa= use_sa
         self.use_ca= use_ca
         self.use_seb= use_seb
         self.use_ceeb= use_ceeb
         
-        self.scd= SCD(use_ca=use_ca, use_sa=use_sa)
+        self.scd= SCD(n_heads=n_heads, use_ca=use_ca, use_sa=use_sa)
         
         if self.use_ceeb:
             self.ceeb= CEEB()
