@@ -4,6 +4,7 @@ def main():
     parser.add_argument('--run_name', type=str, required=True, help='Name of the current training run')
     parser.add_argument('--out_dir', type=str, required=True, help='Output directory of logs/checkpoints')
     parser.add_argument('--checkpoint_path', type= str, default="", help='Path of checkpoint used for training, if none is given new model is trained.')
+    parser.add_argument('--num_heads', type= int, default=8, help='Number of attention heads.')
     parser.add_argument('--use_sa', type= lambda x: str(x).lower()=="true", default=True, help='Use self-attention layers')
     parser.add_argument('--use_ca', type= lambda x: str(x).lower()=="true", default=True, help='Use cross-attention layers')
     parser.add_argument('--first_upsampling', type= str, default='bilinear', choices=['bilinear', 'transconv'], help='First upsampling method')
@@ -16,6 +17,7 @@ def main():
     data_root = args.data_root
     out_dir= args.out_dir
     checkpoint_path= args.checkpoint_path
+    n_heads=args.num_heads
     use_sa= args.use_sa
     use_ca= args.use_ca
     first_upsampling= args.first_upsampling
@@ -56,6 +58,7 @@ def main():
     
     model = EFormer(use_sa=use_sa,
                     use_ca= use_ca,
+                    n_heads=n_heads,
                     first_upsampling=first_upsampling,
                     second_upsampling=second_upsampling,
                     hr_dim=hr_res,
@@ -92,6 +95,7 @@ def main():
 
 
     for epoch in range(start_epoch, num_epochs):
+        torch.cuda.empty_cache()
         
         results= train(model=model,
                 train_loader=train_loader,
