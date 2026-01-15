@@ -1,5 +1,5 @@
 from pathlib import Path
-from preprocessing_utils import unpack_bg20k, unpack_videomatte240k, sample_bg10k, split_train_set, blend_foreground_with_background
+from data.preprocessing_utils import *
 import os 
 
 if __name__=='__main__':
@@ -47,13 +47,17 @@ if __name__=='__main__':
         os.makedirs(os.path.join(split, 'fgr'), exist_ok=True)
         os.makedirs(os.path.join(split, 'pha'), exist_ok=True)
 
+        bg10k_split= "test" if split=="val" else split
+            
         #compose 
-        blend_foreground_with_background(os.path.join(videomatte240k_path, split),
-                                        os.path.join(bg10k_path, split),
+        compose_videomatte240k(os.path.join(videomatte240k_path, split),
+                                        os.path.join(bg10k_path, bg10k_split),
                                         composite_split_path)
     
-    #compose AIM images
-    blend_foreground_with_background(aim_path,
-                                  os.path.join(bg10k_path, 'train'),
-                                  os.path.join(composite_dataset_path, 'train')
-                                  )
+    #compose AIM images (each foreground on one backgrounds)
+    compose_aim(os.path.join(aim_path, 'train'),
+                os.path.join(bg10k_path, 'train'),
+                os.path.join(composite_dataset_path, 'train'),
+                n_combinations=1
+                )
+    

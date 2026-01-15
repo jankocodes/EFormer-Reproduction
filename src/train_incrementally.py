@@ -3,6 +3,8 @@ def main():
     parser.add_argument('--data_root', type=str, required=True, help='Path to composite dataset')
     parser.add_argument('--run_name', type=str, required=True, help='Name of the current training run')
     parser.add_argument('--out_dir', type=str, required=True, help='Output directory of logs/checkpoints')
+    parser.add_argument('--checkpoint_path', type= str, default="", help='Path of checkpoint used for training, if none is given new model is trained.')
+    parser.add_argument('--num_heads', type= int, default=8, help='Number of attention heads.')
     parser.add_argument('--use_sa', type= lambda x: str(x).lower()=="true", default=True, help='Use self-attention layers')
     parser.add_argument('--use_ca', type= lambda x: str(x).lower()=="true", default=True, help='Use cross-attention layers')
     parser.add_argument('--first_upsampling', type= str, default='bilinear', choices=['bilinear', 'transconv'], help='First upsampling method')
@@ -14,17 +16,14 @@ def main():
 
     data_root = args.data_root
     out_dir= args.out_dir
+    checkpoint_path= args.checkpoint_path
+    n_heads=args.num_heads
     use_sa= args.use_sa
     use_ca= args.use_ca
     first_upsampling= args.first_upsampling
     second_upsampling= args.second_upsampling
     hr_res= args.hr_resolution
     lr_res= args.lr_resolution
-    
-    seed = 42
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
 
     #create logging dirs 
     json_log = {}
@@ -47,48 +46,56 @@ def main():
                                 p_flip=0)
 
 
-    train_loader = DataLoader(train_dataset, batch_size=24, shuffle=True, num_workers=8,
+    train_loader = DataLoader(train_dataset, batch_size=18, shuffle=True, num_workers=8,
     pin_memory=True,
     persistent_workers=True  
     )
     
-    val_loader= DataLoader(val_dataset, batch_size=24, shuffle=False, num_workers=8,
+    val_loader= DataLoader(val_dataset, batch_size=18, shuffle=False, num_workers=8,
     pin_memory=True,
     persistent_workers=True 
     )
-
+    
     model = EFormer(use_sa=use_sa,
                     use_ca= use_ca,
+                    n_heads=n_heads,
                     first_upsampling=first_upsampling,
                     second_upsampling=second_upsampling,
                     hr_dim=hr_res,
-                    lr_dim=lr_res).to(device)  
-
-    criterion= torch.nn.BCELoss()
+                    lr_dim=lr_res).to(device)
 
     # AdamW optimizer with lr decaying by 0.8 every 5 epochs
     optimizer = optim.AdamW(model.parameters(), lr=1e-4)
     scheduler = StepLR(optimizer, step_size=5, gamma=0.8)
+    best_val_loss= float('inf')
+    start_epoch= 0
+    
+    #resume training from checkpoint
+    if checkpoint_path:
+        checkpoint = torch.load(args.checkpoint_path, map_location=device)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        start_epoch = checkpoint['epoch'] + 1
+        best_val_loss = checkpoint['best_val_loss']
+        print(f"Resumed from checkpoint: {checkpoint_path} at epoch {start_epoch}")
+        
+
+    criterion= torch.nn.BCELoss()
 
     # Training loop 
     num_epochs = 25
-
-    best_val_loss= float('inf')
 
     # Debugging ############################################################################
     print("Start training: ", flush=True)
     
     print(f"Model on device: {next(model.parameters()).device}", flush=True)
     
-    for name, param in model.named_parameters():
-        print(f"{name} -> {param.device}")
-
     ########################################################################################
 
 
-    for epoch in range(num_epochs):
-        print(f"[DEBUG] Model still on: {next(model.parameters()).device}", flush=True)
-
+    for epoch in range(start_epoch, num_epochs):
+        torch.cuda.empty_cache()
         
         results= train(model=model,
                 train_loader=train_loader,
@@ -111,10 +118,15 @@ def main():
             torch.save(model.state_dict(), f"{checkpoint_dir}/best_model.pth")
             print(f"New best model saved (Epoch {epoch+1})", flush=True)
 
-        #save every 5 epochs
-        if (epoch + 1) % 5 == 0:
-            torch.save(model.state_dict(), f"{checkpoint_dir}/eformer_epoch{epoch+1}.pth")
-        
+        #save every epoch
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'best_val_loss': best_val_loss
+            }, f"{checkpoint_dir}/eformer_epoch{epoch+1}.pth")
+            
         #save results    
         with open(f"{log_dir}/train_metrics.json", "w") as f:
             json.dump(json_log, f, indent=4)

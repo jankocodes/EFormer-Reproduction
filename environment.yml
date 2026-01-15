@@ -1,0 +1,20 @@
+name: eformer_env
+channels:
+  - conda-forge
+  - pytorch
+  - nvidia
+  - defaults
+dependencies:
+  - python=3.9
+  - matplotlib
+  - numpy
+  - pandas
+  - cpuonly
+  - pytorch
+  - torchaudio
+  - torchvision
+  - ipykernel
+  - scikit-learn
+  - tensorboard
+  - opencv
+prefix: /Users/jannisschuhmann/anaconda3/envs/eformer_env

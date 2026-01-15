@@ -3,22 +3,30 @@ import torch.nn as nn
 
 #Semantic & Contour Detector
 class SCD(nn.Module):
-    def __init__(self, *args, **kwargs):        
+    def __init__(self, n_heads=8, use_ca= True, use_sa= True, *args, **kwargs):        
         super().__init__(*args, **kwargs)
+        
+        #for ablation study 
+        self.n_heads=n_heads
+        self.use_ca= use_ca
+        self.use_sa= use_sa
         
         self.hr_layernorm= nn.LayerNorm(256)
         self.lr_layernorm= nn.LayerNorm(256)
         self.hr_lr_layernorm= nn.LayerNorm(256)
         
-        self.positional_enc1= nn.Parameter(torch.zeros(1, 1, 256))
-        
-        self.cross_attention= nn.MultiheadAttention(256, 4)
+        self.max_seq_len = 3136  # depends on input resolution
+        self.positional_enc1 = nn.Parameter(torch.zeros(self.max_seq_len, 1, 256))  # (N, 1, D)
+        nn.init.trunc_normal_(self.positional_enc1, std=0.02)     
+           
+        self.cross_attention= nn.MultiheadAttention(256, n_heads)
         
         self.enhance_layernorm= nn.LayerNorm(256)
         
-        self.positional_enc2= nn.Parameter(torch.zeros(1,1,256))
+        self.positional_enc2 = nn.Parameter(torch.zeros(self.max_seq_len, 1, 256))  # (N, 1, D)
+        nn.init.trunc_normal_(self.positional_enc2, std=0.02)
         
-        self.self_attention= nn.MultiheadAttention(256, 4)
+        self.self_attention= nn.MultiheadAttention(256, n_heads)
         
         
     
@@ -27,26 +35,36 @@ class SCD(nn.Module):
         #dim: (N,B,256)
         f_hr_lr_emb= f_hr_emb+f_lr_emb
         
-        #applying layernorm + adding positional encoding for k,q       
-        k_ca= self.hr_layernorm(f_hr_emb) + self.positional_enc1 
-        q_ca= self.lr_layernorm(f_lr_emb) + self.positional_enc1 
-        v_ca= self.hr_lr_layernorm(f_hr_lr_emb) 
+        if self.use_ca:
+            #applying layernorm + adding positional encoding for k,q       
+            seq_len = f_hr_lr_emb.size(0)  # N
+            k_ca= self.hr_layernorm(f_hr_emb) + self.positional_enc1[:seq_len]
+            q_ca= self.lr_layernorm(f_lr_emb) + self.positional_enc1[:seq_len]
+            v_ca= self.hr_lr_layernorm(f_hr_lr_emb) 
+            
+            #perform cross-attention
+            f_contour_edge,_= self.cross_attention(k_ca,q_ca,v_ca) 
+            
+            f_enhance= f_contour_edge + v_ca 
+        else:
+            # Skip CA: use HR-LR mix directly
+            f_enhance= f_hr_lr_emb
         
-        #perform cross-attention
-        f_contour_edge,_= self.cross_attention(k_ca,q_ca,v_ca) 
         
-        f_enhance= f_contour_edge + v_ca 
-        
-        #applying layernorm + adding positional encoding for k,q
-        f_enhance_ln= self.enhance_layernorm(f_enhance)
-        
-        k_sa= q_sa= f_enhance_ln + self.positional_enc2 
-        v_sa= f_enhance_ln 
-        
-        #perform self-attention
-        self_attention,_= self.self_attention(k_sa,q_sa,v_sa)
-        f_semantic_contour= self_attention + v_sa 
-        
+        if self.use_sa:
+            #applying layernorm + adding positional encoding for k,q
+            f_enhance_ln= self.enhance_layernorm(f_enhance)
+            
+            seq_len = f_enhance_ln.size(0)  # N
+            k_sa= q_sa= f_enhance_ln + self.positional_enc2[:seq_len] 
+            v_sa= f_enhance_ln 
+            
+            #perform self-attention
+            att_out,_= self.self_attention(k_sa,q_sa,v_sa)
+            f_semantic_contour= att_out + v_sa 
+        else:
+            f_semantic_contour= f_enhance
+            
         return f_semantic_contour
         
         

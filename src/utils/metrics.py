@@ -1,117 +1,114 @@
 # Mean Absolute Difference 
 import torch
 import torch.nn.functional as F
+import numpy as np
+import cv2
 
 #MAD
-def mean_absolute_deviation(pred: torch.Tensor, target: torch.Tensor):
-    """
-    Compute Mean Absolute Deviation (MAD) between predicted and ground truth alpha mattes.
-    
-    Args:
-    - pred (Tensor): Predicted alpha matte (B, 1, H, W)
-    - target (Tensor): Ground truth alpha matte (B, 1, H, W)
-    
-    Returns:
-    - Tensor: MAD value
-    """
-    return torch.mean(torch.abs(pred - target))
+class MetricMAD:
+    def __call__(self, pred, true):
+        return np.abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy()).mean() 
 
-    
+
 #MSE
-def mean_squared_error(pred: torch.Tensor, targets: torch.Tensor):
-    
-    """
-    Compute Mean Squared Error (MSE) between predicted and ground truth alpha mattes.
-
-    Args:
-    - pred (Tensor): Predicted alpha matte (B, 1, H, W)
-    - targets (Tensor): Ground truth alpha matte (B, 1, H, W)
-
-    Returns:
-    - Tensor: MSE value
-    """
-    
-    return torch.mean((pred-targets)**2)
+class MetricMSE:
+    def __call__(self, pred, true):
+        return ((pred.detach().cpu().numpy() - true.detach().cpu().numpy()) ** 2).mean()
     
 #Grad  
-def gradient_loss(pred: torch.Tensor, target: torch.Tensor):
+class MetricGRAD:
+    def __init__(self, sigma=1.4):
+        self.filter_x, self.filter_y = self.gauss_filter(sigma)
     
-    """
-    Compute the gradient loss between the predicted and ground truth alpha mattes.
-    
-    This loss uses the Sobel operator to compute the gradient magnitude of both the predicted and ground truth alpha mattes.
-    The difference between the two gradient magnitudes is then computed and the mean absolute difference is returned.
-    
-    Args:
-    - pred (Tensor): Predicted alpha matte (B, 1, H, W)
-    - target (Tensor): Ground truth alpha matte (B, 1, H, W)
-    
-    Returns:
-    - Tensor: Gradient loss value
-    """
-    def compute_gradient(image: torch.Tensor):
+    def __call__(self, pred: torch.Tensor, true: torch.Tensor):
+        pred= pred.squeeze().detach().cpu().numpy()
+        true= true.squeeze().detach().cpu().numpy()
         
-        #sobel filters
-        sobel_x = torch.tensor([[-1, 0, 1], 
-                                [-2, 0, 2], 
-                                [-1, 0, 1]], dtype=torch.float32).view(1, 1, 3, 3)  
+        pred_normed = np.zeros_like(pred)
+        true_normed = np.zeros_like(true)
+        cv2.normalize(pred, pred_normed, 1., 0., cv2.NORM_MINMAX)
+        cv2.normalize(true, true_normed, 1., 0., cv2.NORM_MINMAX)
 
-        sobel_y = torch.tensor([[-1, -2, -1], 
-                                [0,  0,  0], 
-                                [1,  2,  1]], dtype=torch.float32).view(1, 1, 3, 3)  
-        
-        sobel_x, sobel_y= sobel_x.to(image.device), sobel_y.to(image.device)
-        
-        #gradient computation through convolution with sobel filters
-        grad_x= F.conv2d(image, sobel_x, padding=1)
-        grad_y= F.conv2d(image, sobel_y, padding=1)
-        
-        grad_magnitude= torch.sqrt(grad_x**2 + grad_y**2 + 1e-6) #avoid sqrt(0)
-        
-        return grad_magnitude
-    
-    batch_size= pred.shape[0]
-    
-    grad_pred = compute_gradient(pred)
-    grad_target = compute_gradient(target)
+        true_grad = self.gauss_gradient(true_normed).astype(np.float32)
+        pred_grad = self.gauss_gradient(pred_normed).astype(np.float32)
 
-    return torch.sum(torch.abs(grad_pred - grad_target))/batch_size
+        grad_loss = ((true_grad - pred_grad) ** 2).sum()
+        return grad_loss 
+    
+    def gauss_gradient(self, img):
+        img_filtered_x = cv2.filter2D(img, -1, self.filter_x, borderType=cv2.BORDER_REPLICATE)
+        img_filtered_y = cv2.filter2D(img, -1, self.filter_y, borderType=cv2.BORDER_REPLICATE)
+        return np.sqrt(img_filtered_x**2 + img_filtered_y**2)
+    
+    @staticmethod
+    def gauss_filter(sigma, epsilon=1e-2):
+        half_size = np.ceil(sigma * np.sqrt(-2 * np.log(np.sqrt(2 * np.pi) * sigma * epsilon)))
+        size = np.int64(2 * half_size + 1)
+
+        # create filter in x axis
+        filter_x = np.zeros((size, size))
+        for i in range(size):
+            for j in range(size):
+                filter_x[i, j] = MetricGRAD.gaussian(i - half_size, sigma) * MetricGRAD.dgaussian(
+                    j - half_size, sigma)
+
+        # normalize filter
+        norm = np.sqrt((filter_x**2).sum())
+        filter_x = filter_x / norm
+        filter_y = np.transpose(filter_x)
+
+        return filter_x, filter_y
+        
+    @staticmethod
+    def gaussian(x, sigma):
+        return np.exp(-x**2 / (2 * sigma**2)) / (sigma * np.sqrt(2 * np.pi))
+    
+    @staticmethod
+    def dgaussian(x, sigma):
+        return -x * MetricGRAD.gaussian(x, sigma) / sigma**2
 
 
 #Conn
-def connectivity_loss(pred: torch.Tensor, target: torch.Tensor, step= 0.1):
+class MetricCONN:
+    def __call__(self, pred, true):
+        step=0.1
+        threshold=0.15
+  
+        pred = pred.squeeze().cpu().detach().numpy()
+        true = true.squeeze().cpu().detach().numpy()
+
+        step = step
+        thresh_steps = np.arange(0, 1 + step, step)
+
+        round_down_map = -np.ones_like(true)
+
+        for i in range(1, len(thresh_steps)):
+            true_thresh = true >= thresh_steps[i]
+            pred_thresh = pred >= thresh_steps[i]
+            intersection = (true_thresh & pred_thresh).astype(np.uint8)
+
+            # connected components
+            _, output, stats, _ = cv2.connectedComponentsWithStats(intersection, connectivity=4)
+            size = stats[1:, -1]
+
+            omega = np.zeros_like(true)
+            if len(size) != 0:
+                max_id = np.argmax(size)
+                omega[output == max_id + 1] = 1
+
+            mask = (round_down_map == -1) & (omega == 0)
+            round_down_map[mask] = thresh_steps[i-1]
+
+        round_down_map[round_down_map == -1] = 1
+
+        true_diff = true - round_down_map
+        pred_diff = pred - round_down_map
+
+        true_phi = 1 - true_diff * (true_diff >= threshold)
+        pred_phi = 1 - pred_diff * (pred_diff >= threshold)
+
+        connectivity_error = np.sum(np.abs(true_phi - pred_phi))
         
-        """
-        Compute connectivity loss between predicted and ground truth alpha mattes.
-        
-        This loss evaluates the predicted alpha matte at multiple threshold levels and computes the difference in connectivity between the predicted and ground truth binary masks at each threshold.
-        
-        Args:
-        - pred (Tensor): Predicted alpha matte (B, 1, H, W)
-        - target (Tensor): Ground truth alpha matte (B, 1, H, W)
-        - step (float): Step size for threshold values
-        
-        Returns:
-        - Tensor: Connectivity loss value
-        """
-        batch_size= pred.shape[0]
-        loss= 0.0
-        
-        for i in range(batch_size):
-            pred_pha= pred[i, 0]
-            target_pha= target[i, 0]    
-                        
-            for threshold in torch.arange(start=step, end=1.0, step=step, device=pred.device):
-                
-                #generate binary masks 
-                pred_mask = (pred_pha >= threshold).float()
-                target_mask = (target_pha >= threshold).float()
-                
-                #compute connectivity difference
-                loss+= torch.sum(torch.abs(pred_mask- target_mask)) 
-        
-        return loss/batch_size
-                
-                
-                
-                
+        return connectivity_error 
+                    
+                    

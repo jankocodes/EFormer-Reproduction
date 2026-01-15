@@ -1,17 +1,18 @@
 from torch.utils.data import Dataset
 from PIL import Image
-import torchvision.transforms as T
+import torchvision.transforms.functional as F
+
 import os
-from pathlib import Path
-from glob import glob
+
 import numpy as np
 import random
 
 class EFormerDataset(Dataset):
-    def __init__(self, root_dir, transform, p_flip):
+    def __init__(self, root_dir, size, p_flip):
         self.root_dir = root_dir
-        self.transform = transform
+        self.size = size
         self.pairs = []
+    
         
         self.com_dir= os.path.join(root_dir, 'composites')
         self.pha_dir= os.path.join(root_dir, 'pha')
@@ -32,21 +33,25 @@ class EFormerDataset(Dataset):
     def __getitem__(self, idx):
         name = self.filenames[idx]
         
-        composite_path= os.path.join(self.com_dir, name)
+        composite_path = os.path.join(self.com_dir, name)
         pha_path = os.path.join(self.pha_dir, name)
 
+        # Load images
         composite = Image.open(composite_path).convert("RGB")
         pha = Image.open(pha_path).convert("L")  # Alpha is grayscale
-        
-        #random horizontal flipping
+
+        # Perform flipping and resizing on the CPU (efficient)
         if random.random() < self.p_flip:  
-            composite = composite.transpose(Image.FLIP_LEFT_RIGHT)
-            pha = pha.transpose(Image.FLIP_LEFT_RIGHT)
-            
-        if self.transform:
-            composite = self.transform(composite)
-            pha = self.transform(pha)
-            
-       
+            composite = F.hflip(composite)
+            pha = F.hflip(pha)
+        
+        composite = F.resize(composite, self.size)
+        pha = F.resize(pha, self.size)
+
+        # Convert images to tensors (on CPU by default)
+        composite = F.to_tensor(composite)
+        pha = F.to_tensor(pha)
+        
         return composite, pha
+
 

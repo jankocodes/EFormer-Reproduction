@@ -16,11 +16,15 @@ class Backbone(nn.Module):
         
         
     def forward(self, x):
-        f_enc = self.layer1(x) #(B,256,H/4,W/4)
+        f_1_4 = self.layer1(x) #(B,256,H/4,W/4)
 
-        f_hr = self.layer2(f_enc) #(B,512,H/8,W/8)
-        f_lr = self.layer3(f_hr) #(B,1024,H/16,W/16)
+        f_1_8 = self.layer2(f_1_4) #(B,512,H/8,W/8)
+        f_1_16 = self.layer3(f_1_8) #(B,1024,H/16,W/16)
 
-        return f_enc, f_hr, f_lr
+        return {
+                "1_4": f_1_4,
+                "1_8": f_1_8,
+                "1_16": f_1_16
+                }
     
     
